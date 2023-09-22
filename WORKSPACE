@@ -67,43 +67,43 @@ crate_repositories()
 # vaticle_dependencies_tool_maven_artifacts = "maven_artifacts")
 # vaticle_dependencies_ci_pip()
 
-# ##########################################################
-# # Load package.json and pnpm-lock.yaml
-# ##########################################################
-# load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+##########################################################
+# Load package.json and pnpm-lock.yaml
+##########################################################
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# http_archive(
-#     name = "aspect_rules_js",
-#     sha256 = "515277ae357e62f52e29e0bfb60b73d2d062b8d00d21351d31f37c5bb275d4f5",
-#     strip_prefix = "rules_js-1.5.3",
-#     url = "https://github.com/aspect-build/rules_js/archive/refs/tags/v1.5.3.tar.gz",
-# )
+http_archive(
+    name = "aspect_rules_js",
+    sha256 = "515277ae357e62f52e29e0bfb60b73d2d062b8d00d21351d31f37c5bb275d4f5",
+    strip_prefix = "rules_js-1.5.3",
+    url = "https://github.com/aspect-build/rules_js/archive/refs/tags/v1.5.3.tar.gz",
+)
 
-# load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
+load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
-# rules_js_dependencies()
+rules_js_dependencies()
 
-# load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
+load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
 
-# nodejs_register_toolchains(
-#     name = "nodejs",
-#     node_version = DEFAULT_NODE_VERSION,
-# )
+nodejs_register_toolchains(
+    name = "nodejs",
+    node_version = DEFAULT_NODE_VERSION,
+)
 
-# load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
+load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
 
-# npm_translate_lock(
-#     name = "npm",
-#     pnpm_lock = "//ui:pnpm-lock.yaml",
-#     verify_node_modules_ignored = "//:.bazelignore",
-#     lifecycle_hooks_exclude = [
-#         "nice-napi",
-#     ]
-# )
+npm_translate_lock(
+    name = "npm",
+    pnpm_lock = "//ui:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+    lifecycle_hooks_exclude = [
+        "nice-napi",
+    ]
+)
 
-# load("@npm//:repositories.bzl", "npm_repositories")
+load("@npm//:repositories.bzl", "npm_repositories")
 
-# npm_repositories()
+npm_repositories()
 
 
 # ##################

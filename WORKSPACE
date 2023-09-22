@@ -1,5 +1,3 @@
-workspace(name = "live_update")
-
 ##############################
 # Load @vaticle_dependencies #
 ##############################
@@ -7,8 +5,21 @@ workspace(name = "live_update")
 load("//dependencies/vaticle:repositories.bzl", "vaticle_dependencies")
 vaticle_dependencies()
 
-# load("@vaticle_dependencies//distribution:deps.bzl", "vaticle_bazel_distribution")
-# vaticle_bazel_distribution()
+load("@vaticle_dependencies//distribution:deps.bzl", "vaticle_bazel_distribution")
+vaticle_bazel_distribution()
+
+# Load //builder/java
+load("@vaticle_dependencies//builder/java:deps.bzl", java_deps = "deps")
+java_deps()
+
+# Load //builder/kotlin
+load("@vaticle_dependencies//builder/kotlin:deps.bzl", kotlin_deps = "deps")
+kotlin_deps()
+load("@io_bazel_rules_kotlin//kotlin:repositories.bzl", "kotlin_repositories", "kotlinc_version")
+kotlin_repositories()
+load("@io_bazel_rules_kotlin//kotlin:core.bzl", "kt_register_toolchains")
+kt_register_toolchains()
+register_toolchains("//:kotlin_toolchain_strict_deps")
 
 # # Load //@vaticle_bazel_distribution//common
 # load("@vaticle_bazel_distribution//common:deps.bzl", "rules_pkg")
@@ -62,10 +73,10 @@ crate_repositories()
 # load("@io_bazel_rules_docker//rust:image.bzl", _rust_image_repos = "repositories")
 # _rust_image_repos()
 
-# # Load //tool/common
-# load("@vaticle_dependencies//tool/common:deps.bzl", "vaticle_dependencies_ci_pip",
-# vaticle_dependencies_tool_maven_artifacts = "maven_artifacts")
-# vaticle_dependencies_ci_pip()
+# Load //tool/common
+load("@vaticle_dependencies//tool/common:deps.bzl", "vaticle_dependencies_ci_pip",
+vaticle_dependencies_tool_maven_artifacts = "maven_artifacts")
+vaticle_dependencies_ci_pip()
 
 ##########################################################
 # Load package.json and pnpm-lock.yaml
@@ -105,6 +116,14 @@ load("@npm//:repositories.bzl", "npm_repositories")
 
 npm_repositories()
 
+###############
+# Load @maven #
+###############
+load("//dependencies/maven:artifacts.bzl", maven_artifacts = "artifacts")
+load("@vaticle_dependencies//library/maven:rules.bzl", "maven")
+maven(
+    maven_artifacts + vaticle_dependencies_tool_maven_artifacts
+)
 
 # ##################
 # # Load terraform #

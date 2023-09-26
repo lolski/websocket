@@ -3,7 +3,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 rust_binary(
     name = "bin",
-    srcs = ["src/main.rs"],
+    srcs = ["src/main.rs", "src/service.rs"],
     deps = [
         "@crates//:axum",
         "@crates//:futures",

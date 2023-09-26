@@ -18,9 +18,9 @@ async fn websocket_handler(ws: WebSocket) -> () {
     let (mut ws_sender, mut ws_receiver) = ws.split();
     while let Some(try_request) = ws_receiver.next().await {
         match try_request {
-            Ok(msg_request) => {
+            Ok(request) => {
                 println!("websocket_handler: new message received");
-                let request_value = msg_request.to_text().unwrap();
+                let request_value = request.to_text().unwrap();
                 let response_value = format!("response for '{}'", request_value.to_string());
                 let response = Message::Text(response_value.clone());
                 let try_send = ws_sender.send(response).await;

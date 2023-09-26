@@ -11,16 +11,16 @@ target/
 Cargo.toml
 Cargo.lock
 
-# # UI
-# ui/node_modules/
-# ui/dist
-# ui/yarn-debug.log*
-# ui/yarn-error.log*
-# ui/webpack.txt
-# ui/.angular/cache
-# ui/.sass-cache/
-# ui/connect.lock
-# ui/coverage
-# ui/libpeerconnection.log
-# ui/testem.log
-# ui/typings
+# UI
+ui/node_modules/
+ui/dist
+ui/yarn-debug.log*
+ui/yarn-error.log*
+ui/webpack.txt
+ui/.angular/cache
+ui/.sass-cache/
+ui/connect.lock
+ui/coverage
+ui/libpeerconnection.log
+ui/testem.log
+ui/typings

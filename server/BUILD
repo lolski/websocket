@@ -6,6 +6,7 @@ rust_binary(
     srcs = ["src/main.rs"],
     deps = [
         "@crates//:axum",
+        "@crates//:futures",
         "@crates//:tokio",
     ],
     visibility = ["//visibility:public"]

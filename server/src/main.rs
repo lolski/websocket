@@ -1,16 +1,16 @@
 use std::net::{IpAddr, SocketAddr};
-use axum::Router;
+use axum::{Router, Server};
 use axum::routing::get;
 
 mod service;
 
 #[tokio::main]
 async fn main() -> () {
-    let router = Router::new()
+    let router: Router = Router::new()
         .route("/about", get(service::about_handler))
         .route("/websocket", get(service::websocket_handler_ws_http_upgrade));
-    let addr = addr();
-    let axum_builder = axum::Server::bind(&addr);
+    let addr: SocketAddr = addr();
+    let axum_builder = Server::bind(&addr);
     println!("server started");
     axum_builder.serve(router.into_make_service()).await.unwrap();
 }

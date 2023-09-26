@@ -4,7 +4,8 @@ use axum::response::Response;
 use futures::{SinkExt, StreamExt};
 
 pub async fn about_handler<'l1>() -> &'l1 str {
-    "return value from 'about_handler'"
+    let response: &'l1 str = "return value from 'about_handler'";
+    return response;
 }
 
 pub async fn websocket_handler_ws_http_upgrade(ws_http_upgrade: WebSocketUpgrade) -> Response {

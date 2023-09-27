@@ -1,5 +1,5 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@npm//ui:@angular/cli/package_json.bzl", angular_cli_bin = "bin")
+load("@npm//client:@angular/cli/package_json.bzl", angular_cli_bin = "bin")
 
 exports_files([
     "package.json",
@@ -60,6 +60,6 @@ angular_cli_bin.ng(
     args = ["build"],
     chdir = package_name(),
     log_level = "debug",
-    out_dirs = ["dist/ui"],
+    out_dirs = ["dist/client"],
     visibility = [ "//visibility:public" ]
 )

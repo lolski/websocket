@@ -9,9 +9,10 @@ import { ResponsesComponent } from './responses/responses.component';
     RequestComponent,
     ResponsesComponent
   ],
-  exports: [
-    RequestComponent
-  ],
+    exports: [
+        RequestComponent,
+        ResponsesComponent
+    ],
     imports: [
         CommonModule,
         ReactiveFormsModule

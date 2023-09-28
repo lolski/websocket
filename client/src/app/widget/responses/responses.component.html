@@ -1,1 +1,8 @@
-<p>responses works!</p>
+<ng-template ngFor let-item [ngForOf]="responses">
+    <li>
+        <p>
+            <span style="font-style: italic">{{item.request}}:</span>
+            <span>{{item.response}}</span>
+        </p>
+    </li>
+</ng-template>

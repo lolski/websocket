@@ -1,13 +1,15 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { InputComponent } from './input/input.component';
+import { RequestComponent } from './request/request.component';
+import { ResponsesComponent } from './responses/responses.component';
 
 @NgModule({
   declarations: [
-    InputComponent
+    RequestComponent,
+    ResponsesComponent
   ],
   exports: [
-    InputComponent
+    RequestComponent
   ],
   imports: [
     CommonModule

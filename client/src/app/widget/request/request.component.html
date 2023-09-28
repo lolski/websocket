@@ -1,1 +1,4 @@
-<p>request works!</p>
+<form [formGroup]="requestSubmission" (ngSubmit)="onRequestSubmitted()">
+    <input type="text" formControlName="request">
+    <button type="submit">Submit</button>
+</form>

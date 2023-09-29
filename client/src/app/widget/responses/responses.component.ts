@@ -7,6 +7,8 @@ import {Component, Input} from '@angular/core';
 })
 export class ResponsesComponent {
     @Input() response: { request: string; response: string } | undefined = undefined;
+
     responses: { request: string; response: string }[] = [];
+
 
 }

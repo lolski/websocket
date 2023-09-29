@@ -7,9 +7,6 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
 
-  // receive channel
-  // send channel
-
   receiveRequest(value: string): void {
     console.log("event: " + value)
   }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, Input} from '@angular/core';
 
 @Component({
   selector: 'app-responses',
@@ -6,8 +6,7 @@ import { Component } from '@angular/core';
   styleUrls: ['./responses.component.scss']
 })
 export class ResponsesComponent {
-    responses = [
-        { request: "hi1", response: "ho2" },
-        { request: "hi2", response: "ho2" }
-    ]
+    @Input() response: { request: string; response: string } | undefined = undefined;
+    responses: { request: string; response: string }[] = [];
+
 }

@@ -6,5 +6,11 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'ui';
+
+  // receive channel
+  // send channel
+
+  receiveRequest(value: string): void {
+    console.log("event: " + value)
+  }
 }

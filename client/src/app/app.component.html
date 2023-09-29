@@ -1,2 +1,2 @@
-<app-responses /> <!-- TODO: if receiveRequest() is triggered, then pass the value down here -->
+<app-responses [response]="response" />
 <app-request (submitted)="receiveRequest($event)" />

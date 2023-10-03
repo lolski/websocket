@@ -1,5 +1,6 @@
 import {Component, EventEmitter, Output} from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
+import {ConnectionService} from "../../service/connection.service";
 
 @Component({
   selector: 'app-request',
@@ -12,7 +13,7 @@ export class RequestComponent {
 
   form: FormGroup;
 
-  constructor(private formBuilder: FormBuilder) {
+  constructor(private formBuilder: FormBuilder, private wsService: ConnectionService) {
     this.form = formBuilder.group({
       text: ['']
     });

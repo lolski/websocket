@@ -1,4 +1,5 @@
 import {Component, Input, OnChanges, SimpleChanges} from '@angular/core';
+import {ConnectionService} from "../../service/connection.service";
 
 @Component({
   selector: 'app-responses',
@@ -9,6 +10,9 @@ export class ResponsesComponent implements OnChanges {
     @Input() response: { request: string; response: string } | undefined;
 
     responses: { request: string; response: string }[] = [];
+
+    constructor(private wsService: ConnectionService) {
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['response']) {

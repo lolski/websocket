@@ -44,6 +44,11 @@ export class ConnectionService {
     console.log("ConnectionService - closed")
     this.close(this.websocket)
     let this_ = this
-    setTimeout(() => { this_.websocket = this_.open() }, this.reopenDelayMs)
+    setTimeout(() => {
+          console.log("timeout, {}", this_)
+          this_.websocket = this_.open()
+        },
+        this.reopenDelayMs
+    )
   }
 }

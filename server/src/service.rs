@@ -8,18 +8,18 @@ pub async fn about_handler<'l1>() -> &'l1 str {
     return response;
 }
 
-pub async fn websocket_handler_ws_http_upgrade(ws_http_upgrade: WebSocketUpgrade) -> Response {
-    println!("websocket_handler_ws_http_upgrade: triggered");
-    return ws_http_upgrade.on_upgrade(websocket_handler);
+pub async fn connection_handler_ws_http_upgrade(ws_http_upgrade: WebSocketUpgrade) -> Response {
+    println!("connection_handler_ws_http_upgrade: triggered");
+    return ws_http_upgrade.on_upgrade(connection_handler);
 }
 
-async fn websocket_handler(ws: WebSocket) -> () {
-    println!("websocket_handler: triggered");
+async fn connection_handler(ws: WebSocket) -> () {
+    println!("connection_handler: triggered");
     let (mut ws_sender, mut ws_receiver) = ws.split();
     while let Some(try_request) = ws_receiver.next().await {
         match try_request {
             Ok(request) => {
-                println!("websocket_handler: new message received");
+                println!("connection_handler: new message received");
                 let request_value = request.to_text().unwrap();
                 let response_value = format!("response for '{}'", request_value.to_string());
                 let response = Message::Text(response_value.clone());
@@ -33,7 +33,7 @@ async fn websocket_handler(ws: WebSocket) -> () {
                 }
             }
             Err(e) => {
-                println!("websocket_handler: an error occurred: {}", e);
+                println!("connection_handler: an error occurred: {}", e);
                 let response_value = format!("response for the following error '{}'", e.to_string());
                 let response = Message::Text(response_value.clone());
                 let try_send = ws_sender.send(response).await;
@@ -47,6 +47,6 @@ async fn websocket_handler(ws: WebSocket) -> () {
             }
         }
     }
-    println!("websocket_handler: finished");
+    println!("connection_handler: finished");
 }
 

@@ -8,7 +8,7 @@ mod service;
 async fn main() -> () {
     let router: Router = Router::new()
         .route("/about", get(service::about_handler))
-        .route("/websocket", get(service::websocket_handler_ws_http_upgrade));
+        .route("/connection", get(service::connection_handler_ws_http_upgrade));
     let addr: SocketAddr = addr();
     let axum_builder = Server::bind(&addr);
     println!("server started");
@@ -18,7 +18,7 @@ async fn main() -> () {
 fn addr() -> SocketAddr {
     let ip_array: [u8; 4] = [127, 0, 0, 1];
     let ip: IpAddr = IpAddr::from(ip_array);
-    let port: u16 = 10000;
+    let port: u16 = 8080;
     let addr: SocketAddr = SocketAddr::new(ip, port);
     addr
 }

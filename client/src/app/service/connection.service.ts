@@ -26,9 +26,6 @@ export class ConnectionService {
   }
 
   private close(ws: WebSocket): void {
-    ws.onopen = (): void => {}
-    ws.onerror = (error: any): void => {}
-    ws.onclose = (close: CloseEvent): void => {}
     this.websocket.close()
   }
 

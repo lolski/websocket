@@ -9,9 +9,9 @@ import {ConnectionService} from "../../service/connection.service";
 })
 export class RequestComponent {
 
-  @Output() submitted: EventEmitter<string> = new EventEmitter();
+  @Output() submitted: EventEmitter<string> = new EventEmitter()
 
-  form: FormGroup;
+  form: FormGroup
 
   constructor(private formBuilder: FormBuilder, private connSvc: ConnectionService) {
     this.form = formBuilder.group({

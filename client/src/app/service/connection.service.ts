@@ -8,22 +8,22 @@ export class ConnectionService {
   private readonly heartbeatIntervalMs: number = 2000
   private readonly reopenDelayMs: number = 2000
 
-  websocket: WebSocket
+  private websocket: WebSocket
   private heartbeat: Heartbeat
 
   constructor() {
-    this.websocket = this.ws()
-    this.heartbeat = new Heartbeat(this.websocket, this.heartbeatIntervalMs)
+    [this.websocket, this.heartbeat] = this.open()
   }
 
-  private ws(): WebSocket {
+  private open(): [WebSocket, Heartbeat] {
     let ws = new WebSocket(this.url)
     console.log("ConnectionService - open started. readyState = {}", this.readyState(ws))
     ws.onopen = () => this.wsOpened(this)
     ws.onerror = (error: any) => this.wsErrored(this, error)
     ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt)
+    let hb = new Heartbeat(this.websocket, this.heartbeatIntervalMs)
     console.log("ConnectionService - open ended. readyState = {}", this.readyState(ws))
-    return ws
+    return [ws, hb]
   }
 
   private wsOpened(connSvc: ConnectionService): void {
@@ -46,7 +46,9 @@ export class ConnectionService {
   private scheduleReopen(connSvc: ConnectionService) {
     setTimeout(() => {
           console.log("timeout, {}", connSvc)
-          connSvc.websocket = connSvc.ws()
+          let [ws, hb] = connSvc.open()
+          connSvc.websocket = ws
+          connSvc.heartbeat = hb
         },
         this.reopenDelayMs
     )

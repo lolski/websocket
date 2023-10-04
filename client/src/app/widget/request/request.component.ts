@@ -13,7 +13,7 @@ export class RequestComponent {
 
   form: FormGroup;
 
-  constructor(private formBuilder: FormBuilder, private wsService: ConnectionService) {
+  constructor(private formBuilder: FormBuilder, private connSvc: ConnectionService) {
     this.form = formBuilder.group({
       text: ['']
     });

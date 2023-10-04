@@ -11,7 +11,7 @@ export class ResponsesComponent implements OnChanges {
 
     responses: { request: string; response: string }[] = [];
 
-    constructor(private wsService: ConnectionService) {
+    constructor(private connSvc: ConnectionService) {
     }
 
     ngOnChanges(changes: SimpleChanges): void {

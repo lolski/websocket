@@ -5,8 +5,8 @@ import { Injectable } from '@angular/core';
 })
 export class ConnectionService {
 
-  private url: string = "ws://localhost:8080/connection"
-  private reopenDelayMs: number = 2000
+  private readonly url: string = "ws://localhost:8080/connection"
+  private readonly reopenDelayMs: number = 2000
 
   private websocket: WebSocket
 

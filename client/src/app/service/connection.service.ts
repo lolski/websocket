@@ -9,27 +9,30 @@ export class ConnectionService {
   private readonly reopenDelayMs: number = 2000
 
   private websocket: WebSocket
-  private heartbeat: Heartbeat
+  private heartbeat: Heartbeat | undefined
 
   constructor() {
-    [this.websocket, this.heartbeat] = this.open()
+    this.websocket = this.wsOpen()
   }
 
-  private open(): [WebSocket, Heartbeat] {
+  private wsOpen(): WebSocket {
     let ws = new WebSocket(this.url)
     console.log("ConnectionService - open started. readyState = {}", this.readyState(ws))
     ws.onopen = () => this.wsOpened(this)
     ws.onerror = (error: any) => this.wsErrored(this, error)
     ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt)
-    let hb = new Heartbeat(this.websocket, this.heartbeatIntervalMs)
     console.log("ConnectionService - open ended. readyState = {}", this.readyState(ws))
-    return [ws, hb]
+    return ws
   }
 
   private wsOpened(connSvc: ConnectionService): void {
     console.log("ConnectionService - opened. readyState = {}", this.readyState(connSvc.websocket))
-    if (this.heartbeat.isActive()) throw new Error("assertion error")
-    this.heartbeat.activate()
+    if (this.heartbeat === undefined) {
+      this.heartbeat = new Heartbeat(this.websocket, this.heartbeatIntervalMs)
+    }
+    let hb = this.heartbeat!
+    if (hb.isActive()) throw new Error("assertion error")
+    hb.activate()
   }
 
   private wsErrored(connSvc: ConnectionService, error: any): void {
@@ -39,16 +42,19 @@ export class ConnectionService {
   private wsClosed(connSvc: ConnectionService, closeEvt: CloseEvent): void {
     console.log("ConnectionService - closed. readyState = {}", this.readyState(connSvc.websocket))
     if (closeEvt.wasClean) throw new Error("assertion error")
-    if (this.heartbeat.isActive()) this.heartbeat.deactivate()
+    if (this.heartbeat !== undefined) {
+      let hb = this.heartbeat!
+      if (!hb.isActive()) throw new Error("assertion error")
+      hb.deactivate()
+      this.heartbeat = undefined
+    }
     this.scheduleReopen(connSvc)
   }
 
   private scheduleReopen(connSvc: ConnectionService) {
     setTimeout(() => {
           console.log("timeout, {}", connSvc)
-          let [ws, hb] = connSvc.open()
-          connSvc.websocket = ws
-          connSvc.heartbeat = hb
+          connSvc.websocket = connSvc.wsOpen()
         },
         this.reopenDelayMs
     )

@@ -75,7 +75,7 @@ export class ConnectionService {
     }
   }
 
-  public send(data: string) {
+  public send(data: string): void {
     this.websocket.send(data)
   }
 }

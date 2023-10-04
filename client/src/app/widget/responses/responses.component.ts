@@ -12,6 +12,7 @@ export class ResponsesComponent implements OnChanges {
     responses: { request: string; response: string }[] = [];
 
     constructor(private connSvc: ConnectionService) {
+
     }
 
     ngOnChanges(changes: SimpleChanges): void {

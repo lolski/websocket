@@ -21,6 +21,7 @@ async fn connection_handler(ws: WebSocket) -> () {
             Ok(request) => {
                 println!("connection_handler: new message received");
                 let request_value = request.to_text().unwrap();
+                println!("connection_handler: new message received = {}", request_value);
                 let response_value = format!("response for '{}'", request_value.to_string());
                 let response = Message::Text(response_value.clone());
                 let try_send = ws_sender.send(response).await;

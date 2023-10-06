@@ -19,6 +19,7 @@ export class ConnectionService {
     let ws = new WebSocket(this.url)
     console.log("ConnectionService - open started. readyState = {}", this.readyState(ws))
     ws.onopen = () => this.wsOpened(this)
+    ws.onmessage = this.setOnResponse((res: string) => { console.log("response: ", res) })
     ws.onerror = (error: any) => this.wsErrored(this, error)
     ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt)
     console.log("ConnectionService - open ended. readyState = {}", this.readyState(ws))
@@ -75,8 +76,12 @@ export class ConnectionService {
     }
   }
 
-  public send(data: string): void {
-    this.websocket.send(data)
+  public setOnResponse(onResponse: (res: string) => void): (msgEvt: MessageEvent) => void {
+    return (msgEvt: MessageEvent): void => { onResponse(msgEvt.data) }
+  }
+
+  public sendRequest(req: string): void {
+    this.websocket.send(req)
   }
 }
 

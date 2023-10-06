@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 
+type ResponseReceiver = (res: string) => void
+
 @Injectable({
   providedIn: 'root'
 })
@@ -19,7 +21,7 @@ export class ConnectionService {
     let ws = new WebSocket(this.url)
     console.log("ConnectionService - open started. readyState = {}", this.readyState(ws))
     ws.onopen = () => this.wsOpened(this)
-    ws.onmessage = this.setOnResponse((res: string) => { console.log("response: ", res) })
+    ws.onmessage = this.createWsOnMessage((res: string): void => { console.log("default receiver: received ", res)})
     ws.onerror = (error: any) => this.wsErrored(this, error)
     ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt)
     console.log("ConnectionService - open ended. readyState = {}", this.readyState(ws))
@@ -55,7 +57,9 @@ export class ConnectionService {
   private scheduleReopen(connSvc: ConnectionService) {
     setTimeout(() => {
           console.log("timeout, {}", connSvc)
+          let wsOnMsg = connSvc.websocket.onmessage
           connSvc.websocket = connSvc.wsOpen()
+          connSvc.websocket.onmessage = wsOnMsg
         },
         this.reopenDelayMs
     )
@@ -76,8 +80,15 @@ export class ConnectionService {
     }
   }
 
-  public setOnResponse(onResponse: (res: string) => void): (msgEvt: MessageEvent) => void {
-    return (msgEvt: MessageEvent): void => { onResponse(msgEvt.data) }
+  public setResponseReceiver(responseReceiver: ResponseReceiver): void {
+    this.websocket.onmessage = this.createWsOnMessage(responseReceiver)
+  }
+
+  private createWsOnMessage(responseReceiver: ResponseReceiver) {
+    return (msgEvt: MessageEvent): void => {
+      if (msgEvt.data === "response for 'ping'") return
+      responseReceiver(msgEvt.data)
+    };
   }
 
   public sendRequest(req: string): void {

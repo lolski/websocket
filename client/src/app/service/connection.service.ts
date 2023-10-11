@@ -24,26 +24,15 @@ export class ConnectionService {
   }
 
   private queryParamsUpdated(params: Params) {
+    this.heartbeatDeactivate();
     this.port = params['port']
     this.reopen(this)
   }
 
-  private wsOpen(): WebSocket {
-    let ws = new WebSocket(this.url())
-    console.log("ConnectionService - open started. readyState = {}", this.readyState(ws))
-    ws.onopen = () => this.wsOpened(this)
-    ws.onmessage = this.createWsOnMessage((res: string): void => { console.log("default receiver: received ", res)})
-    ws.onerror = (error: any) => this.wsErrored(this, error)
-    ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt)
-    console.log("ConnectionService - open ended. readyState = {}", this.readyState(ws))
-    return ws
-  }
-
   private wsOpened(connSvc: ConnectionService): void {
     console.log("ConnectionService - opened. readyState = {}", this.readyState(connSvc.websocket))
-    if (this.heartbeat === undefined) {
-      this.heartbeat = new Heartbeat(this.websocket, this.heartbeatIntervalMs)
-    }
+    if (this.heartbeat !== undefined) throw new Error("assertion error")
+    this.heartbeatActivate();
     let hb = this.heartbeat!
     if (hb.isActive()) throw new Error("assertion error")
     hb.activate()
@@ -56,13 +45,17 @@ export class ConnectionService {
   private wsClosed(connSvc: ConnectionService, closeEvt: CloseEvent): void {
     console.log("ConnectionService - closed. readyState = {}", this.readyState(connSvc.websocket))
     if (closeEvt.wasClean) throw new Error("assertion error")
-    if (this.heartbeat !== undefined) {
-      let hb = this.heartbeat!
-      if (!hb.isActive()) throw new Error("assertion error")
-      hb.deactivate()
-      this.heartbeat = undefined
-    }
+    this.heartbeatDeactivate();
     this.scheduleReopen(connSvc)
+  }
+
+  private scheduleReopen(connSvc: ConnectionService) {
+    setTimeout(() => {
+          console.log("timeout, {}", connSvc)
+          this.reopen(connSvc);
+        },
+        this.reopenDelayMs
+    )
   }
 
   private readyState(ws: WebSocket): string {
@@ -80,23 +73,21 @@ export class ConnectionService {
     }
   }
 
-  private scheduleReopen(connSvc: ConnectionService) {
-    setTimeout(() => {
-          console.log("timeout, {}", connSvc)
-          this.reopen(connSvc);
-        },
-        this.reopenDelayMs
-    )
+  private wsOpen(): WebSocket {
+    let ws = new WebSocket(this.url())
+    console.log("ConnectionService - open started. readyState = {}", this.readyState(ws))
+    ws.onopen = () => this.wsOpened(this)
+    ws.onmessage = this.createWsOnMessage((res: string): void => { console.log("default receiver: received ", res)})
+    ws.onerror = (error: any) => this.wsErrored(this, error)
+    ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt)
+    console.log("ConnectionService - open ended. readyState = {}", this.readyState(ws))
+    return ws
   }
 
   private reopen(connSvc: ConnectionService) {
     let wsOnMsg = connSvc.websocket.onmessage
     connSvc.websocket = connSvc.wsOpen()
     connSvc.websocket.onmessage = wsOnMsg
-  }
-
-  public setResponseReceiver(responseReceiver: ResponseReceiver): void {
-    this.websocket.onmessage = this.createWsOnMessage(responseReceiver)
   }
 
   private createWsOnMessage(responseReceiver: ResponseReceiver) {
@@ -108,6 +99,23 @@ export class ConnectionService {
 
   public sendRequest(req: string): void {
     this.websocket.send(req)
+  }
+
+  public setResponseReceiver(responseReceiver: ResponseReceiver): void {
+    this.websocket.onmessage = this.createWsOnMessage(responseReceiver)
+  }
+
+  private heartbeatActivate() {
+    this.heartbeat = new Heartbeat(this.websocket, this.heartbeatIntervalMs)
+  }
+
+  private heartbeatDeactivate() {
+    if (this.heartbeat !== undefined) {
+      let hb = this.heartbeat!
+      if (!hb.isActive()) throw new Error("assertion error")
+      hb.deactivate()
+      this.heartbeat = undefined
+    }
   }
 
   private url(): string {

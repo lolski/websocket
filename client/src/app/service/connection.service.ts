@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import {ActivatedRoute, Params} from "@angular/router";
 
 type ResponseReceiver = (res: string) => void
 
@@ -6,19 +7,29 @@ type ResponseReceiver = (res: string) => void
   providedIn: 'root'
 })
 export class ConnectionService {
-  private readonly url: string = "ws://localhost:8080/connection"
   private readonly heartbeatIntervalMs: number = 2000
   private readonly reopenDelayMs: number = 2000
+
+  private port: number
 
   private websocket: WebSocket
   private heartbeat: Heartbeat | undefined
 
-  constructor() {
+  constructor(private route: ActivatedRoute) {
+    this.port = 8080
     this.websocket = this.wsOpen()
+    this.route.queryParams.subscribe(params => {
+      this.queryParamsUpdated(params);
+    })
+  }
+
+  private queryParamsUpdated(params: Params) {
+    this.port = params['port']
+    this.reopen(this)
   }
 
   private wsOpen(): WebSocket {
-    let ws = new WebSocket(this.url)
+    let ws = new WebSocket(this.url())
     console.log("ConnectionService - open started. readyState = {}", this.readyState(ws))
     ws.onopen = () => this.wsOpened(this)
     ws.onmessage = this.createWsOnMessage((res: string): void => { console.log("default receiver: received ", res)})
@@ -54,17 +65,6 @@ export class ConnectionService {
     this.scheduleReopen(connSvc)
   }
 
-  private scheduleReopen(connSvc: ConnectionService) {
-    setTimeout(() => {
-          console.log("timeout, {}", connSvc)
-          let wsOnMsg = connSvc.websocket.onmessage
-          connSvc.websocket = connSvc.wsOpen()
-          connSvc.websocket.onmessage = wsOnMsg
-        },
-        this.reopenDelayMs
-    )
-  }
-
   private readyState(ws: WebSocket): string {
     switch (ws.readyState) {
       case WebSocket.CONNECTING:
@@ -80,6 +80,21 @@ export class ConnectionService {
     }
   }
 
+  private scheduleReopen(connSvc: ConnectionService) {
+    setTimeout(() => {
+          console.log("timeout, {}", connSvc)
+          this.reopen(connSvc);
+        },
+        this.reopenDelayMs
+    )
+  }
+
+  private reopen(connSvc: ConnectionService) {
+    let wsOnMsg = connSvc.websocket.onmessage
+    connSvc.websocket = connSvc.wsOpen()
+    connSvc.websocket.onmessage = wsOnMsg
+  }
+
   public setResponseReceiver(responseReceiver: ResponseReceiver): void {
     this.websocket.onmessage = this.createWsOnMessage(responseReceiver)
   }
@@ -93,6 +108,12 @@ export class ConnectionService {
 
   public sendRequest(req: string): void {
     this.websocket.send(req)
+  }
+
+  private url(): string {
+    let url = "ws://localhost:" + this.port + "/connection";
+    console.log("url = ", url)
+    return url
   }
 }
 

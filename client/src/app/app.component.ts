@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {ConnectionService} from "./service/connection.service";
+import { ConnectionService } from "./service/connection.service";
 
 @Component({
   selector: 'app-root',
@@ -16,7 +16,6 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log("setting response receiver")
     this.connSvc.setResponseReceiver(this.receiveResponse.bind(this))
   }
 

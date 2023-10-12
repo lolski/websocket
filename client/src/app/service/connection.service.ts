@@ -7,87 +7,132 @@ type ResponseReceiver = (res: string) => void
   providedIn: 'root'
 })
 export class ConnectionService {
-  private readonly heartbeatIntervalMs: number = 2000
-  private readonly reopenDelayMs: number = 2000
-
-  private port: number
-
-  private websocket: WebSocket
-  private heartbeat: Heartbeat | undefined
+  private websocket: ResilientWebsocket
 
   constructor(private route: ActivatedRoute) {
-    this.port = 8080
-    this.websocket = this.wsOpen()
+    this.websocket = new ResilientWebsocket(this.url(8080))
     this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
   }
 
   private queryParamsUpdated(params: Params) {
-    this.heartbeatDeactivate();
-    this.port = params['port']
-    this.reopen(this)
+    if (params['port'] !== undefined) {
+      let port = params['port']
+      this.websocket.close()
+      this.websocket = this.websocket.clone(this.url(port))
+    }
   }
 
-  private wsOpened(connSvc: ConnectionService): void {
-    console.log("ConnectionService - opened. readyState = {}", this.readyState(connSvc.websocket))
-    if (this.heartbeat !== undefined) throw new Error("assertion error")
-    this.heartbeatActivate();
-    let hb = this.heartbeat!
-    if (hb.isActive()) throw new Error("assertion error")
-    hb.activate()
+  private url(port: number) {
+    return "ws://localhost:" + port + "/connection";
   }
 
-  private wsErrored(connSvc: ConnectionService, error: any): void {
-    console.log("ConnectionService - errored. readyState = {}", this.readyState(connSvc.websocket))
+  public sendRequest(req: string): void {
+    this.websocket.send(req)
+  }
+}
+
+class ResilientWebsocket {
+  private readonly keepAliveIntervalMs: number = 2000
+  private readonly reopenDelayMs: number = 2000
+
+  private websocket: KeepAliveWebsocket
+
+  constructor(url: string) {
+    this.websocket = new KeepAliveWebsocket(url, this.keepAliveIntervalMs)
   }
 
-  private wsClosed(connSvc: ConnectionService, closeEvt: CloseEvent): void {
-    console.log("ConnectionService - closed. readyState = {}", this.readyState(connSvc.websocket))
-    if (closeEvt.wasClean) throw new Error("assertion error")
-    this.heartbeatDeactivate();
-    this.scheduleReopen(connSvc)
+  clone(url: string | undefined): ResilientWebsocket {
+    let rws = new ResilientWebsocket(url !== undefined ? url : this.websocket.url());
+    // TODO: clone onmessage
+    return rws;
   }
 
-  private scheduleReopen(connSvc: ConnectionService) {
+  // TODO: reconnecting logic
+  private scheduleReopen(connSvc: ResilientWebsocket) {
     setTimeout(() => {
-          console.log("timeout, {}", connSvc)
-          this.reopen(connSvc);
+          this.websocket = this.websocket.clone(undefined)
         },
         this.reopenDelayMs
     )
   }
 
+  send(message: string) {
+    this.websocket.send(message)
+  }
+
+  close() {
+    this.websocket.close()
+  }
+}
+
+class KeepAliveWebsocket {
+  private websocket: WebSocket
+  private heartbeat: KeepAliveScheduler
+
+  constructor(url: string, keepAliveMs: number) {
+    this.websocket = this.wsOpen(url)
+    this.heartbeat = new KeepAliveScheduler(this.websocket, keepAliveMs)
+  }
+
+  clone(url: string | undefined): KeepAliveWebsocket {
+    let kaws = new KeepAliveWebsocket(
+        url !== undefined ? url : this.websocket.url,
+        this.heartbeat.getIntervalMs()
+    )
+    kaws.websocket.onopen = this.websocket.onopen
+    kaws.websocket.onmessage = this.websocket.onmessage
+    kaws.websocket.onerror = this.websocket.onerror
+    kaws.websocket.onclose = this.websocket.onclose
+    return kaws;
+  }
+
+  private wsOpen(url: string): WebSocket {
+    let ws = new WebSocket(url)
+    console.log("KeepAliveWebsocket - open started. readyState = {}", this.readyState(ws))
+    ws.onopen = () => this.wsOpened(this)
+    ws.onmessage = this.createWsOnMessage((res: string): void => { console.log("default receiver: received ", res)})
+    ws.onerror = (error: any) => this.wsErrored(this, error)
+    ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt)
+    console.log("KeepAliveWebsocket - open ended. readyState = {}", this.readyState(ws))
+    return ws
+  }
+
+  private wsOpened(connSvc: KeepAliveWebsocket): void {
+    console.log("KeepAliveWebsocket - opened. readyState = {}", this.readyState(connSvc.websocket))
+    if (this.heartbeat.isActive()) throw new Error("assertion error")
+    this.heartbeat.activate()
+  }
+
+  private wsErrored(connSvc: KeepAliveWebsocket, error: any): void {
+    console.log("KeepAliveWebsocket - errored. readyState = {}", this.readyState(connSvc.websocket))
+  }
+
+  private wsClosed(connSvc: KeepAliveWebsocket, closeEvt: CloseEvent): void {
+    console.log("KeepAliveWebsocket - closed. readyState = {}", this.readyState(connSvc.websocket))
+    if (closeEvt.wasClean) throw new Error("assertion error")
+    this.heartbeat.deactivate()
+  }
+
   private readyState(ws: WebSocket): string {
     switch (ws.readyState) {
       case WebSocket.CONNECTING:
-        return "CONNECTING";
+        return "CONNECTING"
       case WebSocket.OPEN:
-        return "OPEN";
+        return "OPEN"
       case WebSocket.CLOSING:
-        return "CLOSING";
+        return "CLOSING"
       case WebSocket.CLOSED:
-        return "CLOSED";
+        return "CLOSED"
       default:
         throw new Error("assertion error")
     }
   }
 
-  private wsOpen(): WebSocket {
-    let ws = new WebSocket(this.url())
-    console.log("ConnectionService - open started. readyState = {}", this.readyState(ws))
-    ws.onopen = () => this.wsOpened(this)
-    ws.onmessage = this.createWsOnMessage((res: string): void => { console.log("default receiver: received ", res)})
-    ws.onerror = (error: any) => this.wsErrored(this, error)
-    ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt)
-    console.log("ConnectionService - open ended. readyState = {}", this.readyState(ws))
-    return ws
-  }
-
-  private reopen(connSvc: ConnectionService) {
-    let wsOnMsg = connSvc.websocket.onmessage
-    connSvc.websocket = connSvc.wsOpen()
-    connSvc.websocket.onmessage = wsOnMsg
+  // TODO
+  public setResponseReceiver(responseReceiver: ResponseReceiver): void {
+    this.websocket.onmessage = this.createWsOnMessage(responseReceiver)
   }
 
   private createWsOnMessage(responseReceiver: ResponseReceiver) {
@@ -97,37 +142,22 @@ export class ConnectionService {
     };
   }
 
-  public sendRequest(req: string): void {
-    this.websocket.send(req)
+  send(message: string) {
+    this.websocket.send(message)
   }
 
-  public setResponseReceiver(responseReceiver: ResponseReceiver): void {
-    this.websocket.onmessage = this.createWsOnMessage(responseReceiver)
+  url() {
+    return this.websocket.url;
   }
 
-  private heartbeatActivate() {
-    this.heartbeat = new Heartbeat(this.websocket, this.heartbeatIntervalMs)
-  }
-
-  private heartbeatDeactivate() {
-    if (this.heartbeat !== undefined) {
-      let hb = this.heartbeat!
-      if (!hb.isActive()) throw new Error("assertion error")
-      hb.deactivate()
-      this.heartbeat = undefined
-    }
-  }
-
-  private url(): string {
-    let url = "ws://localhost:" + this.port + "/connection";
-    console.log("url = ", url)
-    return url
+  close() {
+    // TODO
   }
 }
 
-class Heartbeat {
+class KeepAliveScheduler {
   private readonly intervalMs: number
-  private intervalId: number | undefined
+  private schedulerId: number | undefined
   private readonly websocket: WebSocket
 
   constructor(ws: WebSocket, intervalMs: number) {
@@ -136,13 +166,13 @@ class Heartbeat {
   }
 
   isActive() {
-    return this.intervalId !== undefined;
+    return this.schedulerId !== undefined;
   }
 
   activate() {
-    if (this.intervalId !== undefined) throw new Error("assertion error")
+    if (this.schedulerId !== undefined) throw new Error("assertion error")
 
-    this.intervalId = setInterval(
+    this.schedulerId = setInterval(
         () => {
           console.log("ping")
           this.websocket.send("ping")
@@ -152,9 +182,13 @@ class Heartbeat {
   }
 
   deactivate() {
-    if (this.intervalId === undefined) throw new Error("assertion error")
+    if (this.schedulerId === undefined) throw new Error("assertion error")
 
-    clearInterval(this.intervalId)
-    this.intervalId = undefined
+    clearInterval(this.schedulerId)
+    this.schedulerId = undefined
+  }
+
+  getIntervalMs() {
+    return this.intervalMs
   }
 }

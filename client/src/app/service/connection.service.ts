@@ -21,6 +21,7 @@ export class ConnectionService {
 
   private queryParamsUpdated(params: Params): void {
     if (params['port'] !== undefined) {
+      console.log("a")
       let port = params['port']
       this.websocket.close()
       this.websocket = new ResilientWebsocket(this.url(port), this.websocket.getResponseReceiver())
@@ -42,7 +43,7 @@ export class ConnectionService {
 
 class ResilientWebsocket {
   private readonly keepAliveIntervalMs: number = 2000
-  private readonly reopenDelayMs: number = 2000
+  private readonly recreateDelayMs: number = 2000
 
   private currentResReceiver: ResponseReceiver
   private websocket: KeepAliveWebsocket
@@ -53,12 +54,12 @@ class ResilientWebsocket {
     this.websocket = this.createWebsocket(url, rws)
   }
 
-  private scheduleReopen(rws: ResilientWebsocket): void {
+  private scheduleRecreate(rws: ResilientWebsocket): void {
     setTimeout(
         () => {
           this.websocket = rws.createWebsocket(rws.websocket.url(), rws)
         },
-        this.reopenDelayMs)
+        this.recreateDelayMs)
   }
 
   private createWebsocket(url: string, rws: ResilientWebsocket): KeepAliveWebsocket {
@@ -66,11 +67,12 @@ class ResilientWebsocket {
         url,
         rws.keepAliveIntervalMs,
         rws.currentResReceiver,
-        (_: CloseEvent) => rws.scheduleReopen(rws)
+        (_: CloseEvent) => rws.scheduleRecreate(rws)
     );
   }
 
   setResponseReceiver(responseReceiver: ResponseReceiver): void {
+    this.currentResReceiver = responseReceiver
     this.websocket.setResponseReceiver(responseReceiver)
   }
 
@@ -88,13 +90,12 @@ class ResilientWebsocket {
 }
 
 class KeepAliveWebsocket {
-  private opened: boolean
+  private wasOpened: boolean
   private readonly websocket: WebSocket
   private readonly heartbeat: KeepAliveScheduler
 
-
   constructor(url: string, keepAliveMs: number, responseReceiver: ResponseReceiver, onClose: (closeEvt: CloseEvent) => void) {
-    this.opened = false
+    this.wasOpened = false
     this.websocket = this.createWebsocket(url, responseReceiver, onClose)
     this.heartbeat = new KeepAliveScheduler(this.websocket, keepAliveMs)
   }
@@ -111,13 +112,14 @@ class KeepAliveWebsocket {
   }
 
   private wsOpened(connSvc: KeepAliveWebsocket): void {
-    this.opened = true
+    this.wasOpened = true
     console.log("KeepAliveWebsocket - opened. readyState = {}", this.readyState(connSvc.websocket))
     if (this.heartbeat.isActive()) throw new Error("assertion error")
     this.heartbeat.activate()
   }
 
   public setResponseReceiver(responseReceiver: ResponseReceiver): void {
+    console.log("wow")
     this.websocket.onmessage = this.createWsOnMessage(responseReceiver)
   }
 
@@ -146,10 +148,10 @@ class KeepAliveWebsocket {
 
   private wsClosed(connSvc: KeepAliveWebsocket, closeEvt: CloseEvent, onClose: (closeEvt: CloseEvent) => void): void {
     console.log("KeepAliveWebsocket - closed. readyState = {}", this.readyState(connSvc.websocket))
-    if (this.opened) {
+    if (this.wasOpened) {
       this.heartbeat.deactivate()
-      onClose(closeEvt)
     }
+    onClose(closeEvt)
   }
 
   private readyState(ws: WebSocket): string {
@@ -178,12 +180,12 @@ class KeepAliveScheduler {
     this.intervalMs = intervalMs
   }
 
-  isActive() {
+  isActive(): boolean {
     return this.schedulerId !== undefined;
   }
 
-  activate() {
-    if (this.schedulerId !== undefined) throw new Error("assertion error")
+  activate(): void {
+    if (this.schedulerId !== undefined) throw new Error("scheduler already activated")
 
     this.schedulerId = setInterval(
         () => {
@@ -194,8 +196,8 @@ class KeepAliveScheduler {
     )
   }
 
-  deactivate() {
-    if (this.schedulerId === undefined) throw new Error("assertion error")
+  deactivate(): void {
+    if (this.schedulerId === undefined) throw new Error("scheduler already deactivated")
 
     clearInterval(this.schedulerId)
     this.schedulerId = undefined

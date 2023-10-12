@@ -24,6 +24,6 @@ export class AppComponent implements OnInit {
   }
 
   receiveRequest(value: string): void {
-    this.connSvc.sendRequest(value)
+    this.connSvc.send(value)
   }
 }

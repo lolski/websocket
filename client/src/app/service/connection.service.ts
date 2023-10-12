@@ -10,7 +10,10 @@ export class ConnectionService {
   private websocket: ResilientWebsocket
 
   constructor(private route: ActivatedRoute) {
-    this.websocket = new ResilientWebsocket(this.url(8080))
+    this.websocket = new ResilientWebsocket(
+        this.url(8080),
+        (res: string): void => { console.log("default receiver: received ", res) }
+    )
     this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
@@ -20,20 +23,20 @@ export class ConnectionService {
     if (params['port'] !== undefined) {
       let port = params['port']
       this.websocket.close()
-      this.websocket = this.websocket.clone(this.url(port))
+      this.websocket = new ResilientWebsocket(this.url(port), this.websocket.getResponseReceiver())
     }
   }
 
   private url(port: number): string {
-    return "ws://localhost:" + port + "/connection";
-  }
-
-  public sendRequest(req: string): void {
-    this.websocket.send(req)
+    return "ws://localhost:" + port + "/connection"
   }
 
   public setResponseReceiver(responseReceiver: ResponseReceiver): void {
     this.websocket.setResponseReceiver(responseReceiver)
+  }
+
+  public send(req: string): void {
+    this.websocket.send(req)
   }
 }
 
@@ -41,29 +44,38 @@ class ResilientWebsocket {
   private readonly keepAliveIntervalMs: number = 2000
   private readonly reopenDelayMs: number = 2000
 
+  private currentResReceiver: ResponseReceiver
   private websocket: KeepAliveWebsocket
 
-  constructor(url: string) {
-    this.websocket = new KeepAliveWebsocket(url, this.keepAliveIntervalMs)
+  constructor(url: string, responseReceiver: ResponseReceiver) {
+    this.currentResReceiver = responseReceiver
+    let rws = this
+    this.websocket = this.createWebsocket(url, rws)
   }
 
-  clone(url: string | undefined): ResilientWebsocket {
-    let rws = new ResilientWebsocket(url !== undefined ? url : this.websocket.url());
-    // TODO: clone onmessage
-    return rws;
-  }
-
-  // TODO: reconnecting logic
   private scheduleReopen(rws: ResilientWebsocket): void {
-    setTimeout(() => {
-          this.websocket = this.websocket.clone(undefined)
+    setTimeout(
+        () => {
+          this.websocket = rws.createWebsocket(rws.websocket.url(), rws)
         },
-        this.reopenDelayMs
-    )
+        this.reopenDelayMs)
+  }
+
+  private createWebsocket(url: string, rws: ResilientWebsocket): KeepAliveWebsocket {
+    return new KeepAliveWebsocket(
+        url,
+        rws.keepAliveIntervalMs,
+        rws.currentResReceiver,
+        (_: CloseEvent) => rws.scheduleReopen(rws)
+    );
   }
 
   setResponseReceiver(responseReceiver: ResponseReceiver): void {
     this.websocket.setResponseReceiver(responseReceiver)
+  }
+
+  getResponseReceiver(): ResponseReceiver {
+    return this.currentResReceiver
   }
 
   send(message: string): void {
@@ -76,38 +88,30 @@ class ResilientWebsocket {
 }
 
 class KeepAliveWebsocket {
+  private opened: boolean
   private readonly websocket: WebSocket
   private readonly heartbeat: KeepAliveScheduler
 
-  constructor(url: string, keepAliveMs: number) {
-    this.websocket = this.createWebsocket(url)
+
+  constructor(url: string, keepAliveMs: number, responseReceiver: ResponseReceiver, onClose: (closeEvt: CloseEvent) => void) {
+    this.opened = false
+    this.websocket = this.createWebsocket(url, responseReceiver, onClose)
     this.heartbeat = new KeepAliveScheduler(this.websocket, keepAliveMs)
   }
 
-  clone(url: string | undefined): KeepAliveWebsocket {
-    let kaws = new KeepAliveWebsocket(
-        url !== undefined ? url : this.websocket.url,
-        this.heartbeat.getIntervalMs()
-    )
-    kaws.websocket.onopen = this.websocket.onopen
-    kaws.websocket.onmessage = this.websocket.onmessage
-    kaws.websocket.onerror = this.websocket.onerror
-    kaws.websocket.onclose = this.websocket.onclose
-    return kaws;
-  }
-
-  private createWebsocket(url: string): WebSocket {
+  private createWebsocket(url: string, responseReceiver: ResponseReceiver, onClose: (closeEvt: CloseEvent) => void): WebSocket {
     let ws = new WebSocket(url)
     console.log("KeepAliveWebsocket - open started. readyState = {}", this.readyState(ws))
     ws.onopen = () => this.wsOpened(this)
-    ws.onmessage = this.createWsOnMessage((res: string): void => { console.log("default receiver: received ", res)})
+    ws.onmessage = this.createWsOnMessage(responseReceiver)
     ws.onerror = (error: any) => this.wsErrored(this, error)
-    ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt)
+    ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt, onClose)
     console.log("KeepAliveWebsocket - open ended. readyState = {}", this.readyState(ws))
     return ws
   }
 
   private wsOpened(connSvc: KeepAliveWebsocket): void {
+    this.opened = true
     console.log("KeepAliveWebsocket - opened. readyState = {}", this.readyState(connSvc.websocket))
     if (this.heartbeat.isActive()) throw new Error("assertion error")
     this.heartbeat.activate()
@@ -140,11 +144,13 @@ class KeepAliveWebsocket {
     console.log("KeepAliveWebsocket - errored. readyState = {}", this.readyState(connSvc.websocket))
   }
 
-  private wsClosed(connSvc: KeepAliveWebsocket, closeEvt: CloseEvent): void {
+  private wsClosed(connSvc: KeepAliveWebsocket, closeEvt: CloseEvent, onClose: (closeEvt: CloseEvent) => void): void {
     console.log("KeepAliveWebsocket - closed. readyState = {}", this.readyState(connSvc.websocket))
-    this.heartbeat.deactivate()
+    if (this.opened) {
+      this.heartbeat.deactivate()
+      onClose(closeEvt)
+    }
   }
-
 
   private readyState(ws: WebSocket): string {
     switch (ws.readyState) {
@@ -193,9 +199,5 @@ class KeepAliveScheduler {
 
     clearInterval(this.schedulerId)
     this.schedulerId = undefined
-  }
-
-  getIntervalMs() {
-    return this.intervalMs
   }
 }

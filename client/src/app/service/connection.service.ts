@@ -21,7 +21,6 @@ export class ConnectionService {
 
   private queryParamsUpdated(params: Params): void {
     if (params['port'] !== undefined) {
-      console.log("a")
       let port = params['port']
       this.websocket.close()
       this.websocket = new ResilientWebsocket(this.url(port), this.websocket.getMessageReceiver())
@@ -48,12 +47,27 @@ class ResilientWebsocket {
   private readonly recreateDelayMs: number = 2000
 
   private currentMsgReceiver: MessageReceiver
+  private shouldRecreate: boolean
   private websocket: KeepAliveWebsocket
 
   constructor(url: string, messageReceiver: MessageReceiver) {
     this.currentMsgReceiver = messageReceiver
+    this.shouldRecreate = true
     let rws = this
     this.websocket = this.createWebsocket(url, rws)
+  }
+
+  private createWebsocket(url: string, rws: ResilientWebsocket): KeepAliveWebsocket {
+    return new KeepAliveWebsocket(
+        url,
+        rws.keepAliveIntervalMs,
+        rws.currentMsgReceiver,
+        (_: CloseEvent): void => {
+          if (this.shouldRecreate) {
+            rws.scheduleRecreate(rws)
+          }
+        }
+    );
   }
 
   private scheduleRecreate(rws: ResilientWebsocket): void {
@@ -62,15 +76,6 @@ class ResilientWebsocket {
           this.websocket = rws.createWebsocket(rws.websocket.url(), rws)
         },
         this.recreateDelayMs)
-  }
-
-  private createWebsocket(url: string, rws: ResilientWebsocket): KeepAliveWebsocket {
-    return new KeepAliveWebsocket(
-        url,
-        rws.keepAliveIntervalMs,
-        rws.currentMsgReceiver,
-        (_: CloseEvent) => rws.scheduleRecreate(rws)
-    );
   }
 
   setMessageReceiver(messageReceiver: MessageReceiver): void {
@@ -87,6 +92,7 @@ class ResilientWebsocket {
   }
 
   close(): void {
+    this.shouldRecreate = false
     this.websocket.close()
   }
 }

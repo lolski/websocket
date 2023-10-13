@@ -11,7 +11,7 @@ export class ConnectionService {
 
   constructor(private route: ActivatedRoute) {
     this.websocket = new ResilientWebsocket(
-        this.url(8080),
+        this.url(1024),
         (res: string): void => { console.log("default receiver: received ", res) }
     )
     this.route.queryParams.subscribe(params => {

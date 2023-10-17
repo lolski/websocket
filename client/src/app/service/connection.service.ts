@@ -137,18 +137,18 @@ class KeepAliveWebsocket {
                           onClose: (closeEvt: CloseEvent) => void
   ): WebSocket {
     let ws = new WebSocket(url)
-    console.log("KeepAliveWebsocket - open started. readyState = {}", this.readyState(ws))
+    console.debug("KeepAliveWebsocket - open started. readyState = {}", this.readyState(ws))
     ws.onopen = () => this.wsOpened(this, onOpen)
     ws.onmessage = this.createWsOnMessage(messageReceiver)
     ws.onerror = (error: any) => this.wsErrored(this, error)
     ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt, onClose)
-    console.log("KeepAliveWebsocket - open ended. readyState = {}", this.readyState(ws))
+    console.debug("KeepAliveWebsocket - open ended. readyState = {}", this.readyState(ws))
     return ws
   }
 
   private wsOpened(connSvc: KeepAliveWebsocket, onOpen: () => void): void {
     this.wasOpened = true
-    console.log("KeepAliveWebsocket - opened. readyState = {}", this.readyState(connSvc.websocket))
+    console.debug("KeepAliveWebsocket - opened. readyState = {}", this.readyState(connSvc.websocket))
     if (this.keepAliveScheduler.isActive()) throw new Error("assertion error")
     this.keepAliveScheduler.activate()
     onOpen()
@@ -166,11 +166,11 @@ class KeepAliveWebsocket {
   }
 
   private wsErrored(connSvc: KeepAliveWebsocket, error: any): void {
-    console.log("KeepAliveWebsocket - errored. readyState = {}", this.readyState(connSvc.websocket))
+    console.debug("KeepAliveWebsocket - errored. readyState = {}", this.readyState(connSvc.websocket))
   }
 
   private wsClosed(connSvc: KeepAliveWebsocket, closeEvt: CloseEvent, onClose: (closeEvt: CloseEvent) => void): void {
-    console.log("KeepAliveWebsocket - closed. readyState = {}", this.readyState(connSvc.websocket))
+    console.debug("KeepAliveWebsocket - closed. readyState = {}", this.readyState(connSvc.websocket))
     if (this.wasOpened) {
       this.keepAliveScheduler.deactivate()
     }
@@ -224,7 +224,7 @@ class KeepAliveScheduler {
 
     this.schedulerId = setInterval(
         () => {
-          console.log("ping")
+          console.trace("KeepAliveScheduler - ping")
           this.websocket.send("ping")
         },
         this.intervalMs

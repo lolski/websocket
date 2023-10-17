@@ -13,8 +13,9 @@ export class ConnectionService {
     this.websocket = new ResilientWebsocket(
         this.url(1024),
         () => { console.log("opened") },
+        (e) => { console.log("unable to open") },
         (res: string): void => { console.log("default receiver: received ", res) },
-        () => { console.log("closed") },
+        (e) => { console.log("closed") },
     )
     this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
@@ -28,8 +29,9 @@ export class ConnectionService {
       this.websocket = new ResilientWebsocket(
           this.url(port),
           () => { console.log("opened") },
+          (e) => { console.log("unable to open") },
           this.websocket.getMessageReceiver(),
-          () => { console.log("closed") },
+          (e) => { console.log("closed") },
       )
     }
   }
@@ -54,6 +56,7 @@ class ResilientWebsocket {
   private readonly recreateDelayMs: number = 2000
 
   private readonly onOpen: () => void
+  private readonly onOpenFailure: (e: CloseEvent) => void
   private currentMsgReceiver: MessageReceiver
   private readonly onClose: (e: CloseEvent) => void
   private websocket: KeepAliveWebsocket
@@ -62,10 +65,12 @@ class ResilientWebsocket {
   constructor(
       url: string,
       onOpen: () => void,
+      onOpenFailure: (e: CloseEvent) => void,
       messageReceiver: MessageReceiver,
       onClose: (e: CloseEvent) => void,
   ) {
     this.onOpen = onOpen
+    this.onOpenFailure = onOpenFailure
     this.currentMsgReceiver = messageReceiver
     this.onClose = onClose
     this.websocket = this.createWebsocket(url, this)
@@ -77,6 +82,7 @@ class ResilientWebsocket {
         url,
         rws.keepAliveIntervalMs,
         rws.onOpen,
+        rws.onOpenFailure,
         rws.currentMsgReceiver,
         (e: CloseEvent): void => {
           rws.onClose(e)
@@ -115,7 +121,7 @@ class ResilientWebsocket {
 }
 
 class KeepAliveWebsocket {
-  private wasOpened: boolean
+  private opened: boolean
   private readonly websocket: WebSocket
   private readonly keepAliveScheduler: KeepAliveScheduler
 
@@ -123,17 +129,19 @@ class KeepAliveWebsocket {
       url: string,
       keepAliveMs: number,
       onOpen: () => void,
+      onOpenFailure: (closeEvt: CloseEvent) => void,
       messageReceiver: MessageReceiver,
       onClose: (closeEvt: CloseEvent) => void
   ) {
-    this.wasOpened = false
-    this.websocket = this.createWebsocket(url, messageReceiver, onOpen, onClose)
+    this.opened = false
+    this.websocket = this.createWebsocket(url, messageReceiver, onOpen, onOpenFailure, onClose)
     this.keepAliveScheduler = new KeepAliveScheduler(this.websocket, keepAliveMs)
   }
 
   private createWebsocket(url: string,
                           messageReceiver: MessageReceiver,
                           onOpen: () => void,
+                          onOpenFailure: (closeEvt: CloseEvent) => void,
                           onClose: (closeEvt: CloseEvent) => void
   ): WebSocket {
     let ws = new WebSocket(url)
@@ -141,13 +149,13 @@ class KeepAliveWebsocket {
     ws.onopen = () => this.wsOpened(this, onOpen)
     ws.onmessage = this.createWsOnMessage(messageReceiver)
     ws.onerror = (error: any) => this.wsErrored(this, error)
-    ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt, onClose)
+    ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt, onOpenFailure, onClose)
     console.debug("KeepAliveWebsocket - open ended. readyState = {}", this.readyState(ws))
     return ws
   }
 
   private wsOpened(connSvc: KeepAliveWebsocket, onOpen: () => void): void {
-    this.wasOpened = true
+    this.opened = true
     console.debug("KeepAliveWebsocket - opened. readyState = {}", this.readyState(connSvc.websocket))
     if (this.keepAliveScheduler.isActive()) throw new Error("assertion error")
     this.keepAliveScheduler.activate()
@@ -169,12 +177,14 @@ class KeepAliveWebsocket {
     console.debug("KeepAliveWebsocket - errored. readyState = {}", this.readyState(connSvc.websocket))
   }
 
-  private wsClosed(connSvc: KeepAliveWebsocket, closeEvt: CloseEvent, onClose: (closeEvt: CloseEvent) => void): void {
+  private wsClosed(connSvc: KeepAliveWebsocket, closeEvt: CloseEvent, onOpenFailure: (closeEvt: CloseEvent) => void, onClose: (closeEvt: CloseEvent) => void): void {
     console.debug("KeepAliveWebsocket - closed. readyState = {}", this.readyState(connSvc.websocket))
-    if (this.wasOpened) {
+    if (this.opened) {
       this.keepAliveScheduler.deactivate()
+      onClose(closeEvt)
+    } else {
+      onOpenFailure(closeEvt)
     }
-    onClose(closeEvt)
   }
 
   private readyState(ws: WebSocket): string {

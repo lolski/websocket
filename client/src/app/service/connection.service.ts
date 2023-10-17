@@ -12,7 +12,9 @@ export class ConnectionService {
   constructor(private route: ActivatedRoute) {
     this.websocket = new ResilientWebsocket(
         this.url(1024),
-        (res: string): void => { console.log("default receiver: received ", res) }
+        () => { console.log("opened") },
+        (res: string): void => { console.log("default receiver: received ", res) },
+        () => { console.log("closed") },
     )
     this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
@@ -23,7 +25,12 @@ export class ConnectionService {
     if (params['port'] !== undefined) {
       let port = params['port']
       this.websocket.close()
-      this.websocket = new ResilientWebsocket(this.url(port), this.websocket.getMessageReceiver())
+      this.websocket = new ResilientWebsocket(
+          this.url(port),
+          () => { console.log("opened") },
+          this.websocket.getMessageReceiver(),
+          () => { console.log("closed") },
+      )
     }
   }
 
@@ -46,24 +53,34 @@ class ResilientWebsocket {
   private readonly keepAliveIntervalMs: number = 2000
   private readonly recreateDelayMs: number = 2000
 
+  private readonly onOpen: () => void
   private currentMsgReceiver: MessageReceiver
-  private shouldRecreate: boolean
+  private readonly onClose: (e: CloseEvent) => void
   private websocket: KeepAliveWebsocket
+  private shouldRecreate: boolean
 
-  constructor(url: string, messageReceiver: MessageReceiver) {
+  constructor(
+      url: string,
+      onOpen: () => void,
+      messageReceiver: MessageReceiver,
+      onClose: (e: CloseEvent) => void,
+  ) {
+    this.onOpen = onOpen
     this.currentMsgReceiver = messageReceiver
+    this.onClose = onClose
+    this.websocket = this.createWebsocket(url, this)
     this.shouldRecreate = true
-    let rws = this
-    this.websocket = this.createWebsocket(url, rws)
   }
 
   private createWebsocket(url: string, rws: ResilientWebsocket): KeepAliveWebsocket {
     return new KeepAliveWebsocket(
         url,
         rws.keepAliveIntervalMs,
+        rws.onOpen,
         rws.currentMsgReceiver,
-        (_: CloseEvent): void => {
-          if (this.shouldRecreate) {
+        (e: CloseEvent): void => {
+          rws.onClose(e)
+          if (rws.shouldRecreate) {
             rws.scheduleRecreate(rws)
           }
         }
@@ -102,16 +119,26 @@ class KeepAliveWebsocket {
   private readonly websocket: WebSocket
   private readonly keepAliveScheduler: KeepAliveScheduler
 
-  constructor(url: string, keepAliveMs: number, messageReceiver: MessageReceiver, onClose: (closeEvt: CloseEvent) => void) {
+  constructor(
+      url: string,
+      keepAliveMs: number,
+      onOpen: () => void,
+      messageReceiver: MessageReceiver,
+      onClose: (closeEvt: CloseEvent) => void
+  ) {
     this.wasOpened = false
-    this.websocket = this.createWebsocket(url, messageReceiver, onClose)
+    this.websocket = this.createWebsocket(url, messageReceiver, onOpen, onClose)
     this.keepAliveScheduler = new KeepAliveScheduler(this.websocket, keepAliveMs)
   }
 
-  private createWebsocket(url: string, messageReceiver: MessageReceiver, onClose: (closeEvt: CloseEvent) => void): WebSocket {
+  private createWebsocket(url: string,
+                          messageReceiver: MessageReceiver,
+                          onOpen: () => void,
+                          onClose: (closeEvt: CloseEvent) => void
+  ): WebSocket {
     let ws = new WebSocket(url)
     console.log("KeepAliveWebsocket - open started. readyState = {}", this.readyState(ws))
-    ws.onopen = () => this.wsOpened(this)
+    ws.onopen = () => this.wsOpened(this, onOpen)
     ws.onmessage = this.createWsOnMessage(messageReceiver)
     ws.onerror = (error: any) => this.wsErrored(this, error)
     ws.onclose = (closeEvt: CloseEvent) => this.wsClosed(this, closeEvt, onClose)
@@ -119,11 +146,12 @@ class KeepAliveWebsocket {
     return ws
   }
 
-  private wsOpened(connSvc: KeepAliveWebsocket): void {
+  private wsOpened(connSvc: KeepAliveWebsocket, onOpen: () => void): void {
     this.wasOpened = true
     console.log("KeepAliveWebsocket - opened. readyState = {}", this.readyState(connSvc.websocket))
     if (this.keepAliveScheduler.isActive()) throw new Error("assertion error")
     this.keepAliveScheduler.activate()
+    onOpen()
   }
 
   public setMessageReceiver(messageReceiver: MessageReceiver): void {
@@ -135,18 +163,6 @@ class KeepAliveWebsocket {
       if (msgEvt.data === "response for 'ping'") return
       messageReceiver(msgEvt.data)
     };
-  }
-
-  send(message: string): void {
-    this.websocket.send(message)
-  }
-
-  url(): string {
-    return this.websocket.url;
-  }
-
-  close(): void {
-    this.websocket.close()
   }
 
   private wsErrored(connSvc: KeepAliveWebsocket, error: any): void {
@@ -174,6 +190,18 @@ class KeepAliveWebsocket {
       default:
         throw new Error("assertion error")
     }
+  }
+
+  url(): string {
+    return this.websocket.url;
+  }
+
+  send(message: string): void {
+    this.websocket.send(message)
+  }
+
+  close(): void {
+    this.websocket.close()
   }
 }
 

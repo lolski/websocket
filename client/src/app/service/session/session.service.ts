@@ -29,10 +29,6 @@ export class SessionService {
     return "ws://localhost:" + port + "/connection"
   }
 
-  public setResponseReceiver(responseReceiver: ResponseReceiver): void {
-
-  }
-
   public send(req: string): Promise<string> {
     return this.session.send(req)
   }

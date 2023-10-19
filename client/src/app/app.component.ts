@@ -6,7 +6,7 @@ import { SessionService } from "./service/session/session.service";
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   private sessionSvc: SessionService
 
   response: { request: string; response: string } | undefined
@@ -15,15 +15,11 @@ export class AppComponent implements OnInit {
     this.sessionSvc = sessionSvc
   }
 
-  ngOnInit(): void {
-    this.sessionSvc.setResponseReceiver(this.receiveResponse.bind(this))
+  receiveRequest(value: string): void {
+    this.sessionSvc.send(value).then((res) => this.receiveResponse(res))
   }
 
   receiveResponse(res: string): void {
     this.response = { request: res, response: "response to '" + res + "'" }
-  }
-
-  receiveRequest(value: string): void {
-    this.sessionSvc.send(value).then((res) => this.receiveResponse(res))
   }
 }

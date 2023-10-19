@@ -34,9 +34,9 @@ export class KeepAliveWebsocket {
         return ws
     }
 
-    private wsOpened(connSvc: KeepAliveWebsocket, onOpen: () => void): void {
+    private wsOpened(sessionSvc: KeepAliveWebsocket, onOpen: () => void): void {
         this.opened = true
-        console.debug("KeepAliveWebsocket - opened. readyState = {}", this.readyState(connSvc.websocket))
+        console.debug("KeepAliveWebsocket - opened. readyState = {}", this.readyState(sessionSvc.websocket))
         if (this.keepAliveScheduler.isActive()) throw new Error("assertion error")
         this.keepAliveScheduler.activate()
         onOpen()
@@ -53,12 +53,12 @@ export class KeepAliveWebsocket {
         };
     }
 
-    private wsErrored(connSvc: KeepAliveWebsocket, error: any): void {
-        console.debug("KeepAliveWebsocket - errored. readyState = {}", this.readyState(connSvc.websocket))
+    private wsErrored(sessionSvc: KeepAliveWebsocket, error: any): void {
+        console.debug("KeepAliveWebsocket - errored. readyState = {}", this.readyState(sessionSvc.websocket))
     }
 
-    private wsClosed(connSvc: KeepAliveWebsocket, closeEvt: CloseEvent, onOpenFailure: (closeEvt: CloseEvent) => void, onClose: (closeEvt: CloseEvent) => void): void {
-        console.debug("KeepAliveWebsocket - closed. readyState = {}", this.readyState(connSvc.websocket))
+    private wsClosed(sessionSvc: KeepAliveWebsocket, closeEvt: CloseEvent, onOpenFailure: (closeEvt: CloseEvent) => void, onClose: (closeEvt: CloseEvent) => void): void {
+        console.debug("KeepAliveWebsocket - closed. readyState = {}", this.readyState(sessionSvc.websocket))
         if (this.opened) {
             this.keepAliveScheduler.deactivate()
             onClose(closeEvt)

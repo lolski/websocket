@@ -7,16 +7,16 @@ import { SessionService } from "./service/session/session.service";
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  private connSvc: SessionService
+  private sessionSvc: SessionService
 
   response: { request: string; response: string } | undefined
 
-  constructor(connSvc: SessionService) {
-    this.connSvc = connSvc
+  constructor(sessionSvc: SessionService) {
+    this.sessionSvc = sessionSvc
   }
 
   ngOnInit(): void {
-    this.connSvc.setResponseReceiver(this.receiveResponse.bind(this))
+    this.sessionSvc.setResponseReceiver(this.receiveResponse.bind(this))
   }
 
   receiveResponse(res: string): void {
@@ -24,6 +24,6 @@ export class AppComponent implements OnInit {
   }
 
   receiveRequest(value: string): void {
-    this.connSvc.send(value)
+    this.sessionSvc.send(value)
   }
 }

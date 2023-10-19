@@ -30,57 +30,51 @@ export class Session {
         return pending
     }
 
-    close() {
+    close(): void {
         this.websocket.close()
-    }
-
-    static create(): [Promise<string>, PromiseResolver<string>] {
-        let resolve: (val: string) => void
-        let reject: (e: Error) => void
-        const promise = new Promise((_resolve: (val: string) => void, _reject: (e: Error) => void): void => {
-            [resolve, reject] = [_resolve, _reject]
-        });
-        resolve("3")
-        let promiseResolver = new PromiseResolver<string>(resolve, reject)
-        return [promise, promiseResolver]
-    }
-}
-
-class PromiseResolver<T> {
-    private readonly resolve: (val: T) => void
-    private readonly reject: (e: Error) => void
-
-    constructor(resolve: (val: T) => void, reject: (e: Error) => void) {
-        this.resolve = resolve
-        this.reject = reject
-    }
-
-    respondedSuccess(value: T) {
-        this.resolve(value)
-    }
-
-    respondedFailure(e: Error) {
-        this.reject(e)
     }
 }
 
 class RequestTracker {
-    private pendingList: Map<string, PromiseResolver> = new Map<string, PromiseResolver>()
+    private pendingList: Map<string, Deferred<string>> = new Map<string, Deferred<string>>()
 
     new_(reqId: string): Promise<string> {
+        let pending = new Deferred<string>()
         this.pendingList.set(reqId, pending)
-        return promise
+        return pending.promise
     }
 
     respondedSuccess(reqId: string, res: string): void {
         let pendingRequest = this.pendingList.get(reqId);
         if (pendingRequest !== undefined) throw new Error("x")
-        pendingRequest!.respondedSuccess(res)
+        pendingRequest!.resolve(res)
     }
 
     respondedFailure(reqId: string, e: Error): void {
         let pendingRequest = this.pendingList.get(reqId);
         if (pendingRequest !== undefined) throw new Error("x")
-        pendingRequest!.respondedFailure(e)
+        pendingRequest!.reject("rejected")
+    }
+}
+
+class Deferred<T> {
+    private _resolve: (value: T) => void = () => {};
+    private _reject: (value: T) => void = () => {};
+
+    private _promise: Promise<T> = new Promise<T>((resolve, reject) => {
+        this._resolve = resolve;
+        this._reject = reject;
+    })
+
+    public get promise(): Promise<T> {
+        return this._promise;
+    }
+
+    public resolve(value: T) {
+        this._resolve(value);
+    }
+
+    public reject(value: T) {
+        this._reject(value);
     }
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {ActivatedRoute, Params} from "@angular/router";
 import {ResilientWebsocket} from "./websocket/resilient-websocket";
+import {Deferred} from "ts-deferred/index";
 
 type ResponseReceiver = (res: string) => void
 
@@ -11,6 +12,9 @@ export class SessionService {
   private websocket: ResilientWebsocket
 
   constructor(private route: ActivatedRoute) {
+    let d = new Deferred<string>()
+    d.promise.then((value: string) => console.log("VALUE: ", value))
+    d.resolve("resolved")
     this.websocket = new ResilientWebsocket(
         this.url(1024),
         () => { console.log("opened") },

@@ -35,11 +35,13 @@ export class Session {
     }
 
     static create(): [Promise<string>, PromiseResolver<string>] {
-        let promiseResolver
-        let promise = new Promise((_resolve: (val: string) => void, _reject: (e: Error) => void): void => {
-            promiseResolver = new PromiseResolver<string>(_resolve, _reject)
+        let resolve: (val: string) => void
+        let reject: (e: Error) => void
+        const promise = new Promise((_resolve: (val: string) => void, _reject: (e: Error) => void): void => {
+            [resolve, reject] = [_resolve, _reject]
         });
-
+        resolve("3")
+        let promiseResolver = new PromiseResolver<string>(resolve, reject)
         return [promise, promiseResolver]
     }
 }

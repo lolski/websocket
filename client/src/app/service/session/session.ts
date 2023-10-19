@@ -2,7 +2,7 @@ import {ResilientWebsocket} from "./websocket/resilient-websocket";
 
 export class Session {
     private websocket: ResilientWebsocket
-    private responseTracker: ResponsesTracker
+    private requestTracker: RequestTracker
 
     constructor() {
         this.websocket = new ResilientWebsocket(
@@ -12,7 +12,7 @@ export class Session {
             this.getMessageReceiver,
             () => {},
         )
-        this.responseTracker = new ResponsesTracker()
+        this.requestTracker = new RequestTracker()
     }
 
     private getMessageReceiver(res: string): void {
@@ -20,18 +20,18 @@ export class Session {
         if (split.length !== 2) throw new Error("x")
         let reqId = split[0]
         let resValue = split[1]
-        this.responseTracker.success(reqId, resValue)
+        this.requestTracker.respondedSuccess(reqId, resValue)
     }
 
     send(req: string): Promise<string> {
         let reqId = "" + Math.max()
-        let promise = this.responseTracker.track(reqId)
+        let pending = this.requestTracker.new_(reqId)
         this.websocket.send(reqId + ":" + req)
-        return promise
+        return pending
     }
 }
 
-class ResponseTracker {
+class PendingRequest {
     constructor() {
     }
 
@@ -40,15 +40,15 @@ class ResponseTracker {
     }
 }
 
-class ResponsesTracker {
-    private responsePending: Map<string, ResponseTracker> = new Map<string, ResponseTracker>()
+class RequestTracker {
+    private pendingList: Map<string, PendingRequest> = new Map<string, PendingRequest>()
 
-    track(reqId: string): Promise<string> {
+    new_(reqId: string): Promise<string> {
     }
 
-    success(reqId: string, value: string): void {
+    respondedSuccess(reqId: string, res: string): void {
     }
 
-    failure(reqId: string, e: Error): void {
+    respondedFailure(reqId: string, e: Error): void {
     }
 }

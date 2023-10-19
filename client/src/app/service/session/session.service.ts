@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import {ActivatedRoute, Params} from "@angular/router";
-import {ResilientWebsocket} from "./websocket/resilient-websocket";
-import {Deferred} from "ts-deferred/index";
+import {Session} from "./session";
 
 type ResponseReceiver = (res: string) => void
 
@@ -9,19 +8,10 @@ type ResponseReceiver = (res: string) => void
   providedIn: 'root'
 })
 export class SessionService {
-  private websocket: ResilientWebsocket
+  private session: Session
 
   constructor(private route: ActivatedRoute) {
-    let d = new Deferred<string>()
-    d.promise.then((value: string) => console.log("VALUE: ", value))
-    d.resolve("resolved")
-    this.websocket = new ResilientWebsocket(
-        this.url(1024),
-        () => { console.log("opened") },
-        (e) => { console.log("unable to open") },
-        (res: string): void => { console.log("default receiver: received ", res) },
-        (e) => { console.log("closed") },
-    )
+    this.session = new Session(this.url(1024))
     this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
@@ -30,14 +20,8 @@ export class SessionService {
   private queryParamsUpdated(params: Params): void {
     if (params['port'] !== undefined) {
       let port = params['port']
-      this.websocket.close()
-      this.websocket = new ResilientWebsocket(
-          this.url(port),
-          () => { console.log("opened") },
-          (e) => { console.log("unable to open") },
-          this.websocket.getMessageReceiver(),
-          (e) => { console.log("closed") },
-      )
+      this.session.close()
+      this.session = new Session(this.url(port))
     }
   }
 
@@ -46,10 +30,10 @@ export class SessionService {
   }
 
   public setResponseReceiver(responseReceiver: ResponseReceiver): void {
-    this.websocket.setMessageReceiver(responseReceiver)
+
   }
 
-  public send(req: string): void {
-    this.websocket.send(req)
+  public send(req: string): Promise<string> {
+    return this.session.send(req)
   }
 }

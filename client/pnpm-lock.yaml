@@ -13,6 +13,7 @@ specifiers:
   '@angular/platform-browser-dynamic': ^16.2.0
   '@angular/router': ^16.2.0
   '@types/jasmine': ~4.3.0
+  '@types/uuid': ^9.0.0
   jasmine-core: ~4.6.0
   karma: ~6.4.0
   karma-chrome-launcher: ~3.2.0
@@ -22,6 +23,7 @@ specifiers:
   rxjs: ~7.8.0
   tslib: ^2.3.0
   typescript: ~5.1.3
+  uuid: ^9.0.0
   zone.js: ~0.13.0
 
 dependencies:
@@ -33,8 +35,10 @@ dependencies:
   '@angular/platform-browser': 16.2.6_db3f5n4qklqqj4guwj5pxc47li
   '@angular/platform-browser-dynamic': 16.2.6_6jutagswezhm7ukk3xsg2gcuiy
   '@angular/router': 16.2.6_xaiojnk2lx25a7pcfpmupbwlwi
+  '@types/uuid': 9.0.6
   rxjs: 7.8.1
   tslib: 2.6.2
+  uuid: 9.0.1
   zone.js: 0.13.3
 
 devDependencies:
@@ -2309,6 +2313,10 @@ packages:
     dependencies:
       '@types/node': 20.6.3
     dev: true
+
+  /@types/uuid/9.0.6:
+    resolution: {integrity: sha512-BT2Krtx4xaO6iwzwMFUYvWBWkV2pr37zD68Vmp1CDV196MzczBRxuEpD6Pr395HAgebC/co7hOphs53r8V7jew==}
+    dev: false
 
   /@types/ws/8.5.5:
     resolution: {integrity: sha512-lwhs8hktwxSjf9UaZ9tG5M03PGogvFaH8gUgLNbN9HKIg0dvv6q+gkSuJ8HN4/VbyxkuLzCjlN7GquQ0gUJfIg==}
@@ -6787,6 +6795,11 @@ packages:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
     dev: true
+
+  /uuid/9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    hasBin: true
+    dev: false
 
   /validate-npm-package-license/3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}

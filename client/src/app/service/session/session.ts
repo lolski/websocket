@@ -1,16 +1,17 @@
 import {ResilientWebsocket} from "./websocket/resilient-websocket";
+import { v4 as uuid } from "uuid";
 
 export class Session {
     private websocket: ResilientWebsocket
     private requestTracker: RequestTracker
 
-    constructor() {
+    constructor(url: string) {
         this.websocket = new ResilientWebsocket(
-            "",
-            () => {},
-            () => {},
-            this.getMessageReceiver,
-            () => {},
+            url,
+            () => { console.log("onOpen") },
+            () => { console.log("onOpenFailure") },
+            this.getMessageReceiver.bind(this),
+            () => { console.log("onClose") },
         )
         this.requestTracker = new RequestTracker()
     }
@@ -24,7 +25,7 @@ export class Session {
     }
 
     send(req: string): Promise<string> {
-        let reqId = "" + Math.max()
+        let reqId = uuid()
         let pending = this.requestTracker.new_(reqId)
         this.websocket.send(reqId + "///" + req)
         return pending
@@ -36,28 +37,28 @@ export class Session {
 }
 
 class RequestTracker {
-    private pendingList: Map<string, Deferred<string>> = new Map<string, Deferred<string>>()
+    private pendingList: Map<string, PromiseCompleter<string>> = new Map<string, PromiseCompleter<string>>()
 
     new_(reqId: string): Promise<string> {
-        let pending = new Deferred<string>()
+        let pending = new PromiseCompleter<string>()
         this.pendingList.set(reqId, pending)
         return pending.promise
     }
 
     respondedSuccess(reqId: string, res: string): void {
         let pendingRequest = this.pendingList.get(reqId);
-        if (pendingRequest !== undefined) throw new Error("x")
+        if (pendingRequest === undefined) throw new Error("x")
         pendingRequest!.resolve(res)
     }
 
     respondedFailure(reqId: string, e: Error): void {
         let pendingRequest = this.pendingList.get(reqId);
-        if (pendingRequest !== undefined) throw new Error("x")
+        if (pendingRequest === undefined) throw new Error("x")
         pendingRequest!.reject("rejected")
     }
 }
 
-class Deferred<T> {
+class PromiseCompleter<T> {
     private _resolve: (value: T) => void = () => {};
     private _reject: (value: T) => void = () => {};
 

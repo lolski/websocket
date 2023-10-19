@@ -24,6 +24,6 @@ export class AppComponent implements OnInit {
   }
 
   receiveRequest(value: string): void {
-    this.sessionSvc.send(value)
+    this.sessionSvc.send(value).then((res) => this.receiveResponse(res))
   }
 }

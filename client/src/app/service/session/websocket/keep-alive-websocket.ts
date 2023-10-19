@@ -48,7 +48,7 @@ export class KeepAliveWebsocket {
 
     private createWsOnMessage(messageReceiver: MessageReceiver) {
         return (msgEvt: MessageEvent): void => {
-            if (msgEvt.data === "response for 'ping'") return
+            if (msgEvt.data === "ping") return
             messageReceiver(msgEvt.data)
         };
     }

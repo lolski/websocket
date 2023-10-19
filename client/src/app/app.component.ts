@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ConnectionService } from "./service/connection.service";
+import { ConnectionService } from "./service/connection/connection.service";
 
 @Component({
   selector: 'app-root',

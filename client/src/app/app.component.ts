@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ConnectionService } from "./service/connection/connection.service";
+import { SessionService } from "./service/session/session.service";
 
 @Component({
   selector: 'app-root',
@@ -7,11 +7,11 @@ import { ConnectionService } from "./service/connection/connection.service";
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  private connSvc: ConnectionService
+  private connSvc: SessionService
 
   response: { request: string; response: string } | undefined
 
-  constructor(connSvc: ConnectionService) {
+  constructor(connSvc: SessionService) {
     this.connSvc = connSvc
   }
 

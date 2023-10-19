@@ -7,7 +7,7 @@ type ResponseReceiver = (res: string) => void
 @Injectable({
   providedIn: 'root'
 })
-export class ConnectionService {
+export class SessionService {
   private websocket: ResilientWebsocket
 
   constructor(private route: ActivatedRoute) {

@@ -14,14 +14,14 @@ export class KeepAliveWebsocket {
         onClose: (closeEvt: CloseEvent) => void
     ) {
         this.opened = false
-        this.websocket = this.createWebsocket(url, messageReceiver, onOpen, onOpenFailure, onClose)
+        this.websocket = this.createWebsocket(url, onOpen, onOpenFailure, messageReceiver, onClose)
         this.keepAliveScheduler = new KeepAliveScheduler(this.websocket, keepAliveMs)
     }
 
     private createWebsocket(url: string,
-                            messageReceiver: MessageReceiver,
                             onOpen: () => void,
                             onOpenFailure: (closeEvt: CloseEvent) => void,
+                            messageReceiver: MessageReceiver,
                             onClose: (closeEvt: CloseEvent) => void
     ): WebSocket {
         let ws = new WebSocket(url)
@@ -40,10 +40,6 @@ export class KeepAliveWebsocket {
         if (this.keepAliveScheduler.isActive()) throw new Error("assertion error")
         this.keepAliveScheduler.activate()
         onOpen()
-    }
-
-    public setMessageReceiver(messageReceiver: MessageReceiver): void {
-        this.websocket.onmessage = this.createWsOnMessage(messageReceiver)
     }
 
     private createWsOnMessage(messageReceiver: MessageReceiver) {

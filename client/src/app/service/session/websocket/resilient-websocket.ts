@@ -7,7 +7,7 @@ export class ResilientWebsocket {
 
     private readonly onOpen: () => void
     private readonly onOpenFailure: (e: CloseEvent) => void
-    private currentMsgReceiver: MessageReceiver
+    private readonly messageReceiver: MessageReceiver
     private readonly onClose: (e: CloseEvent) => void
     private websocket: KeepAliveWebsocket
     private shouldRecreate: boolean
@@ -21,7 +21,7 @@ export class ResilientWebsocket {
     ) {
         this.onOpen = onOpen
         this.onOpenFailure = onOpenFailure
-        this.currentMsgReceiver = messageReceiver
+        this.messageReceiver = messageReceiver
         this.onClose = onClose
         this.websocket = this.createWebsocket(url, this)
         this.shouldRecreate = true
@@ -38,7 +38,7 @@ export class ResilientWebsocket {
                     rws.scheduleRecreate(rws)
                 }
             },
-            rws.currentMsgReceiver,
+            rws.messageReceiver,
             (e: CloseEvent): void => {
                 rws.onClose(e)
                 if (rws.shouldRecreate) {
@@ -54,15 +54,6 @@ export class ResilientWebsocket {
                 this.websocket = rws.createWebsocket(rws.websocket.url(), rws)
             },
             this.recreateDelayMs)
-    }
-
-    setMessageReceiver(messageReceiver: MessageReceiver): void {
-        this.currentMsgReceiver = messageReceiver
-        this.websocket.setMessageReceiver(messageReceiver)
-    }
-
-    getMessageReceiver(): MessageReceiver {
-        return this.currentMsgReceiver
     }
 
     send(message: string): void {

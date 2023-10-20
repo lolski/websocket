@@ -2,8 +2,6 @@ import { Injectable } from '@angular/core';
 import {ActivatedRoute, Params} from "@angular/router";
 import {Session} from "./session";
 
-type ResponseReceiver = (res: string) => void
-
 @Injectable({
   providedIn: 'root'
 })

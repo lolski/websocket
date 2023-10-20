@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {ActivatedRoute, Params} from "@angular/router";
 import {Session} from "./session";
+import {Observable} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -27,7 +28,11 @@ export class SessionService {
     return "ws://localhost:" + port + "/connection"
   }
 
-  public send(req: string): Promise<string> {
+  public requestItem(req: string): Promise<string> {
     return this.session.requestItem(req)
+  }
+
+  public requestCollection(req: string): Observable<string> {
+    return this.session.requestCollection(req)
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { SessionService } from "./service/session/session.service";
 
 @Component({
@@ -16,7 +16,8 @@ export class AppComponent {
   }
 
   receiveRequest(value: string): void {
-    this.sessionSvc.send(value).then((res) => this.receiveResponse(res))
+    this.sessionSvc.requestCollection(value).subscribe((res) => this.receiveResponse(res))
+    // this.sessionSvc.requestItem(value).then((res) => this.receiveResponse(res))
   }
 
   receiveResponse(res: string): void {

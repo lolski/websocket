@@ -22,7 +22,7 @@ export class Session {
         if (split.length !== 2) throw new Error("x")
         let reqId = split[0]
         let resValue = split[1]
-        let isItem = true
+        let isItem = false
         if (isItem) {
             this.onItemResponseReceived(reqId, resValue);
         } else {

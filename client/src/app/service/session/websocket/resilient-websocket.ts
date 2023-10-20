@@ -32,7 +32,12 @@ export class ResilientWebsocket {
             url,
             rws.keepAliveIntervalMs,
             rws.onOpen,
-            rws.onOpenFailure,
+            (e: CloseEvent): void => {
+                rws.onOpenFailure(e)
+                if (rws.shouldRecreate) {
+                    rws.scheduleRecreate(rws)
+                }
+            },
             rws.currentMsgReceiver,
             (e: CloseEvent): void => {
                 rws.onClose(e)

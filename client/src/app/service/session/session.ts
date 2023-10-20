@@ -22,12 +22,12 @@ export class Session {
         if (split.length !== 2) throw new Error("x")
         let reqId = split[0]
         let resValue = split[1]
-        this.responsesCollector.collectSuccess(reqId, resValue)
+        this.responsesCollector.itemSuccess(reqId, resValue)
     }
 
     public requestItem(req: string): Promise<string> {
         let reqId = uuid()
-        let pendingRes = this.responsesCollector.track(reqId)
+        let pendingRes = this.responsesCollector.trackItem(reqId)
         this.websocket.send(reqId + "///" + req)
         return pendingRes
     }
@@ -42,30 +42,32 @@ export class Session {
 }
 
 class ResponsesCollector {
-    private responseCollectors: Map<string, PendingResponse<string>> = new Map<string, PendingResponse<string>>()
+    private itemCollectors: Map<string, PendingItem<string>> = new Map<string, PendingItem<string>>()
 
-    track(reqId: string): Promise<string> {
-        let pendingRes = new PendingResponse<string>()
-        this.responseCollectors.set(reqId, pendingRes)
+    trackItem(reqId: string): Promise<string> {
+        let pendingRes = new PendingItem<string>()
+        this.itemCollectors.set(reqId, pendingRes)
         return pendingRes.promise()
     }
 
-    collectSuccess(reqId: string, res: string): void {
-        let pending = this.responseCollectors.get(reqId);
+    itemSuccess(reqId: string, res: string): void {
+        let pending = this.itemCollectors.get(reqId);
         if (pending === undefined) throw new Error("x")
         pending!.success(res)
-        this.responseCollectors.delete(reqId)
+        this.itemCollectors.delete(reqId)
     }
 
-    collectFailure(reqId: string, e: Error): void {
-        let pendingRequest = this.responseCollectors.get(reqId);
+    itemFailure(reqId: string, e: Error): void {
+        let pendingRequest = this.itemCollectors.get(reqId);
         if (pendingRequest === undefined) throw new Error("x")
         pendingRequest!.failure("rejected")
-        this.responseCollectors.delete(reqId)
+        this.itemCollectors.delete(reqId)
     }
+
+    
 }
 
-class PendingResponse<T> {
+class PendingItem<T> {
     private resolve: (value: T) => void = () => {};
     private reject: (value: T) => void = () => {};
     private readonly _promise: Promise<T> = new Promise<T>((resolve, reject) => {

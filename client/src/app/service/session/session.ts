@@ -1,6 +1,6 @@
 import {ResilientWebsocket} from "./websocket/resilient-websocket";
 import { v4 as uuid } from "uuid";
-import {Observable} from "rxjs";
+import {Observable, Subject} from "rxjs";
 
 export class Session {
     private readonly websocket: ResilientWebsocket
@@ -22,7 +22,37 @@ export class Session {
         if (split.length !== 2) throw new Error("x")
         let reqId = split[0]
         let resValue = split[1]
-        this.responsesCollector.itemSuccess(reqId, resValue)
+        let isItem = true
+        if (isItem) {
+            this.onItemResponseReceived(reqId, resValue);
+        } else {
+            this.onCollectionResponseReceived(reqId, resValue);
+        }
+    }
+
+    private onItemResponseReceived(reqId: string, resValue: string) {
+        let isSuccess = true
+        if (isSuccess) {
+            this.responsesCollector.itemSuccess(reqId, resValue)
+        } else {
+            let e = new Error("x")
+            this.responsesCollector.itemFailure(reqId, e)
+        }
+    }
+
+    private onCollectionResponseReceived(reqId: string, resValue: string) {
+        let isNotDone = true
+        if (isNotDone) {
+            this.responsesCollector.collectionNext(reqId, resValue)
+        } else {
+            let isSuccess = true
+            if (isSuccess) {
+                this.responsesCollector.collectionSuccess(reqId)
+            } else {
+                let e = new Error("x")
+                this.responsesCollector.collectionFailure(reqId, e)
+            }
+        }
     }
 
     public requestItem(req: string): Promise<string> {
@@ -33,7 +63,10 @@ export class Session {
     }
 
     public requestCollection(req: string): Observable<string> {
-        throw new Error("TODO")
+        let reqId = uuid()
+        let pendingRes = this.responsesCollector.trackCollection(reqId)
+        this.websocket.send(reqId + "///" + req)
+        return pendingRes
     }
 
     public close(): void {
@@ -43,6 +76,7 @@ export class Session {
 
 class ResponsesCollector {
     private itemCollectors: Map<string, PendingItem<string>> = new Map<string, PendingItem<string>>()
+    private collectionCollectors: Map<string, Subject<string>> = new Map<string, Subject<string>>()
 
     trackItem(reqId: string): Promise<string> {
         let pendingRes = new PendingItem<string>()
@@ -64,7 +98,29 @@ class ResponsesCollector {
         this.itemCollectors.delete(reqId)
     }
 
-    
+    trackCollection(reqId: string): Observable<string> {
+        let subject = new Subject<string>()
+        this.collectionCollectors.set(reqId, subject)
+        return subject
+    }
+
+    collectionNext(reqId: string, value: string) {
+        let pending = this.collectionCollectors.get(reqId);
+        if (pending === undefined) throw new Error("x")
+        pending!.next(value)
+    }
+
+    collectionSuccess(reqId: string) {
+        let pending = this.collectionCollectors.get(reqId);
+        if (pending === undefined) throw new Error("x")
+        pending!.complete()
+    }
+
+    collectionFailure(reqId: string, e: Error) {
+        let pending = this.collectionCollectors.get(reqId);
+        if (pending === undefined) throw new Error("x")
+        pending!.error(e)
+    }
 }
 
 class PendingItem<T> {

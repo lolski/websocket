@@ -30,6 +30,6 @@ export class SessionService {
   }
 
   public send(req: string): Promise<string> {
-    return this.session.send(req)
+    return this.session.requestItem(req)
   }
 }

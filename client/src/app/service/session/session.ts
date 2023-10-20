@@ -1,81 +1,87 @@
 import {ResilientWebsocket} from "./websocket/resilient-websocket";
 import { v4 as uuid } from "uuid";
+import {Observable} from "rxjs";
 
 export class Session {
-    private websocket: ResilientWebsocket
-    private requestTracker: RequestTracker
+    private readonly websocket: ResilientWebsocket
+    private readonly responsesCollector: ResponsesCollector
 
     constructor(url: string) {
         this.websocket = new ResilientWebsocket(
             url,
             () => { console.log("onOpen") },
             () => { console.log("onOpenFailure") },
-            this.getMessageReceiver.bind(this),
-            () => { console.log("onClose") },
+            this.onMessageReceived.bind(this),
+            () => { console.debug("onClose") },
         )
-        this.requestTracker = new RequestTracker()
+        this.responsesCollector = new ResponsesCollector()
     }
 
-    private getMessageReceiver(res: string): void {
+    private onMessageReceived(res: string): void {
         let split = res.split("///")
         if (split.length !== 2) throw new Error("x")
         let reqId = split[0]
         let resValue = split[1]
-        this.requestTracker.respondedSuccess(reqId, resValue)
+        this.responsesCollector.collectSuccess(reqId, resValue)
     }
 
-    send(req: string): Promise<string> {
+    public requestItem(req: string): Promise<string> {
         let reqId = uuid()
-        let pending = this.requestTracker.new_(reqId)
+        let pendingRes = this.responsesCollector.track(reqId)
         this.websocket.send(reqId + "///" + req)
-        return pending
+        return pendingRes
     }
 
-    close(): void {
+    public requestCollection(req: string): Observable<string> {
+        throw new Error("TODO")
+    }
+
+    public close(): void {
         this.websocket.close()
     }
 }
 
-class RequestTracker {
-    private pendingList: Map<string, PromiseCompleter<string>> = new Map<string, PromiseCompleter<string>>()
+class ResponsesCollector {
+    private responseCollectors: Map<string, PendingResponse<string>> = new Map<string, PendingResponse<string>>()
 
-    new_(reqId: string): Promise<string> {
-        let pending = new PromiseCompleter<string>()
-        this.pendingList.set(reqId, pending)
-        return pending.promise
+    track(reqId: string): Promise<string> {
+        let pendingRes = new PendingResponse<string>()
+        this.responseCollectors.set(reqId, pendingRes)
+        return pendingRes.promise()
     }
 
-    respondedSuccess(reqId: string, res: string): void {
-        let pendingRequest = this.pendingList.get(reqId);
-        if (pendingRequest === undefined) throw new Error("x")
-        pendingRequest!.resolve(res)
+    collectSuccess(reqId: string, res: string): void {
+        let pending = this.responseCollectors.get(reqId);
+        if (pending === undefined) throw new Error("x")
+        pending!.success(res)
+        this.responseCollectors.delete(reqId)
     }
 
-    respondedFailure(reqId: string, e: Error): void {
-        let pendingRequest = this.pendingList.get(reqId);
+    collectFailure(reqId: string, e: Error): void {
+        let pendingRequest = this.responseCollectors.get(reqId);
         if (pendingRequest === undefined) throw new Error("x")
-        pendingRequest!.reject("rejected")
+        pendingRequest!.failure("rejected")
+        this.responseCollectors.delete(reqId)
     }
 }
 
-class PromiseCompleter<T> {
-    private _resolve: (value: T) => void = () => {};
-    private _reject: (value: T) => void = () => {};
-
-    private _promise: Promise<T> = new Promise<T>((resolve, reject) => {
-        this._resolve = resolve;
-        this._reject = reject;
+class PendingResponse<T> {
+    private resolve: (value: T) => void = () => {};
+    private reject: (value: T) => void = () => {};
+    private readonly _promise: Promise<T> = new Promise<T>((resolve, reject) => {
+        this.resolve = resolve;
+        this.reject = reject;
     })
 
-    public get promise(): Promise<T> {
+    public success(value: T) {
+        this.resolve(value);
+    }
+
+    public failure(value: T) {
+        this.reject(value);
+    }
+
+    public promise(): Promise<T> {
         return this._promise;
-    }
-
-    public resolve(value: T) {
-        this._resolve(value);
-    }
-
-    public reject(value: T) {
-        this._reject(value);
     }
 }

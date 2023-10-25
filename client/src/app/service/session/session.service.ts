@@ -3,9 +3,7 @@ import {ActivatedRoute, Params} from "@angular/router";
 import {Session} from "./session";
 import {Observable} from "rxjs";
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class SessionService {
   private session: Session
 

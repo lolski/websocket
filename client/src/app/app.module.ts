@@ -3,6 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { ServiceModule } from "./service/service.module";
 import { WidgetModule } from "./widget/widget.module";
 
 @NgModule({
@@ -12,6 +13,7 @@ import { WidgetModule } from "./widget/widget.module";
   imports: [
       AppRoutingModule,
       BrowserModule,
+      ServiceModule,
       WidgetModule
   ],
   providers: [],

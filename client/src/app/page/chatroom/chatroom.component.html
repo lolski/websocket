@@ -1,2 +1,6 @@
+<h1>chatroom</h1>
+<hr />
+<button class="nav-item nav-link-edit" [routerLink]="['/login']">Logout</button>
+<hr />
 <app-responses [response]="response" />
 <app-request (submitted)="receiveRequest($event)" />

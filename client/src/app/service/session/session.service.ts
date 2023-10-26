@@ -6,14 +6,14 @@ import { Observable } from "rxjs";
 export class SessionService {
   private session: Session | undefined
 
-  public open(port: number): Promise<void> {
+  public open(url: string): Promise<void> {
     if (this.session !== undefined) throw new Error("x")
-    this.session = new Session(this.url(port))
+    this.session = new Session(url)
     return Promise.resolve()
   }
 
-  private url(port: number): string {
-    return "ws://localhost:" + port + "/session"
+  public isOpen(): boolean {
+    return this.session !== undefined
   }
 
   public requestItem(req: string): Promise<string> {
@@ -26,6 +26,12 @@ export class SessionService {
     return this.session.requestCollection(req)
   }
 
+  public url(): string | undefined {
+    return this.session?.url()
+  }
+
   public close(): void {
+    if (this.session === undefined) throw new Error("x")
+    this.session.close()
   }
 }

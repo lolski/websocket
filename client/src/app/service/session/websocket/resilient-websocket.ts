@@ -60,6 +60,10 @@ export class ResilientWebsocket {
         this.websocket.send(message)
     }
 
+    url(): string {
+        return this.websocket.url()
+    }
+
     close(): void {
         this.shouldRecreate = false
         this.websocket.close()

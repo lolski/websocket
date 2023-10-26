@@ -69,6 +69,10 @@ export class Session {
         return pendingRes
     }
 
+    public url(): string {
+        return this.websocket.url()
+    }
+
     public close(): void {
         this.websocket.close()
     }

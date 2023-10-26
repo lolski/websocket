@@ -23,14 +23,17 @@ export class ChatroomComponent implements OnInit, OnDestroy {
 
   private queryParamsUpdated(params: Params): void {
     if (params['port'] !== undefined) {
-      let port = params['port']
-      // reconnect
-      console.debug("chatroom: port updated to " + port)
+      this.switchSession("ws://localhost:" + params['port'] + "/session")
     }
   }
 
+  private switchSession(url: string) {
+  }
+
   ngOnInit(): void {
-    // connect
+    if (!this.sessionSvc.isOpen()) {
+      this.sessionSvc.open("ws://localhost:1024/session")
+    }
   }
 
   receiveRequest(value: string): void {

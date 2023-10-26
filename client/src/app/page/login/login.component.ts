@@ -19,19 +19,18 @@ export class LoginComponent implements OnInit, OnDestroy {
     })
   }
 
-  ngOnInit(): void {
-    this.sessionSvc.open(1024).then(() => {
-
-    }).catch(e => {
-
-    })
-  }
-
   private queryParamsUpdated(params: Params): void {
     if (params['port'] !== undefined) {
-      let port = params['port']
-      // reconnect
-      console.debug("login: port updated to " + port)
+      this.switchSession("ws://localhost:" + params['port'] + "/session")
+    }
+  }
+
+  private switchSession(url: string) {
+  }
+
+  ngOnInit(): void {
+    if (!this.sessionSvc.isOpen()) {
+      this.sessionSvc.open("ws://localhost:1024/session")
     }
   }
 

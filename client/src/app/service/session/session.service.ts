@@ -5,21 +5,11 @@ import {Observable} from "rxjs";
 
 @Injectable()
 export class SessionService {
-  private session: Session
+  private session: Session | undefined
 
-  constructor(private route: ActivatedRoute) {
-    this.session = new Session(this.url(1024))
-    this.route.queryParams.subscribe(params => {
-      this.queryParamsUpdated(params);
-    })
-  }
-
-  private queryParamsUpdated(params: Params): void {
-    if (params['port'] !== undefined) {
-      let port = params['port']
-      this.session.close()
-      this.session = new Session(this.url(port))
-    }
+  public newAnonymous(port: number): void {
+    if (this.session !== undefined) throw new Error("x")
+    this.session = new Session(this.url(port))
   }
 
   private url(port: number): string {
@@ -27,10 +17,12 @@ export class SessionService {
   }
 
   public requestItem(req: string): Promise<string> {
+    if (this.session === undefined) throw new Error("x")
     return this.session.requestItem(req)
   }
 
   public requestCollection(req: string): Observable<string> {
+    if (this.session === undefined) throw new Error("x")
     return this.session.requestCollection(req)
   }
 }

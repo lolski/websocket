@@ -17,15 +17,14 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.portChangeEvents = route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
-
   }
 
   ngOnInit(): void {
-    this.sessionSvc.newAnonymous(1024).then(() => {
+    this.sessionSvc.open(1024).then(() => {
 
     }).catch(e => {
 
-        })
+    })
   }
 
   private queryParamsUpdated(params: Params): void {

@@ -12,7 +12,7 @@ async fn main() -> () {
     let axum_builder = Server::bind(&addr);
     let router: Router = Router::new()
         .route("/about", get(service::about_handler))
-        .route("/connection", get(service::connection_handler_ws_http_upgrade));
+        .route("/session", get(service::session_handler_ws_http_upgrade));
     println!("server started on {}", addr);
     axum_builder.serve(router.into_make_service()).await.unwrap();
 }

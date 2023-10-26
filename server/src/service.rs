@@ -8,20 +8,20 @@ pub async fn about_handler<'l1>() -> &'l1 str {
     return response;
 }
 
-pub async fn connection_handler_ws_http_upgrade(ws_http_upgrade: WebSocketUpgrade) -> Response {
-    println!("connection_handler_ws_http_upgrade: triggered");
-    return ws_http_upgrade.on_upgrade(connection_handler);
+pub async fn session_handler_ws_http_upgrade(ws_http_upgrade: WebSocketUpgrade) -> Response {
+    println!("session_handler_ws_http_upgrade: triggered");
+    return ws_http_upgrade.on_upgrade(session_handler);
 }
 
-async fn connection_handler(ws: WebSocket) -> () {
-    println!("connection_handler: triggered");
+async fn session_handler(ws: WebSocket) -> () {
+    println!("session_handler: triggered");
     let (mut ws_sender, mut ws_receiver) = ws.split();
     while let Some(try_request) = ws_receiver.next().await {
         match try_request {
             Ok(request) => {
-                println!("connection_handler: new message received");
+                println!("session_handler: new message received");
                 let request_value = request.to_text().unwrap();
-                println!("connection_handler: new message received = {}", request_value);
+                println!("session_handler: new message received = {}", request_value);
                 let response_value = format!("{}", request_value.to_string());
                 let response = Message::Text(response_value.clone());
                 let try_send = ws_sender.send(response).await;
@@ -34,7 +34,7 @@ async fn connection_handler(ws: WebSocket) -> () {
                 }
             }
             Err(e) => {
-                println!("connection_handler: an error occurred: {}", e);
+                println!("session_handler: an error occurred: {}", e);
                 let response_value = format!("response for the following error '{}'", e.to_string());
                 let response = Message::Text(response_value.clone());
                 let try_send = ws_sender.send(response).await;
@@ -48,6 +48,6 @@ async fn connection_handler(ws: WebSocket) -> () {
             }
         }
     }
-    println!("connection_handler: finished");
+    println!("session_handler: finished");
 }
 

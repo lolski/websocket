@@ -23,7 +23,7 @@ export class SessionService {
   }
 
   private url(port: number): string {
-    return "ws://localhost:" + port + "/connection"
+    return "ws://localhost:" + port + "/session"
   }
 
   public requestItem(req: string): Promise<string> {

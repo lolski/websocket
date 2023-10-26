@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import {ActivatedRoute, Params} from "@angular/router";
 import {Session} from "./session";
 import {Observable} from "rxjs";
 
@@ -7,9 +6,10 @@ import {Observable} from "rxjs";
 export class SessionService {
   private session: Session | undefined
 
-  public newAnonymous(port: number): void {
+  public newAnonymous(port: number, ): Promise<void> {
     if (this.session !== undefined) throw new Error("x")
     this.session = new Session(this.url(port))
+    return Promise.resolve()
   }
 
   private url(port: number): string {

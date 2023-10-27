@@ -19,7 +19,7 @@ export class SettingComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.sessionSvc.anonymous(this.url(8081))
+    this.sessionSvc.authenticated(this.url(8081))
     this.portChangeEvents = this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
@@ -29,7 +29,7 @@ export class SettingComponent implements OnInit, OnDestroy {
     let port = params['port'];
     if (port !== undefined) {
       if (this.sessionSvc.url() !== this.url(port)) {
-        this.sessionSvc.anonymous(this.url(port))
+        this.sessionSvc.authenticated(this.url(port))
       }
     }
   }

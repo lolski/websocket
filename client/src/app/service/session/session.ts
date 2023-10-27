@@ -2,6 +2,11 @@ import {ResilientWebsocket} from "./websocket/resilient-websocket";
 import { v4 as uuid } from "uuid";
 import {Observable, Subject} from "rxjs";
 
+export enum SessionType {
+    Anonymous = "Anonymous",
+    Authenticated = "Authenticated",
+}
+
 export abstract class Session {
     private readonly websocket: ResilientWebsocket
     private readonly responsesCollector: ResponsesCollector
@@ -57,6 +62,8 @@ export abstract class Session {
         }
     }
 
+    public abstract type(): SessionType
+
     public requestItem(req: string): Promise<string> {
         let reqId = uuid()
         let pendingRes = this.responsesCollector.trackItem(reqId)
@@ -88,6 +95,26 @@ export class AnonymousSession extends Session {
     protected onOpen(): void {
         this.requestItem("handshake(type:anonymous)")
             .catch(e => this.close())
+    }
+
+    public type(): SessionType {
+        return SessionType.Anonymous
+    }
+}
+
+export class AuthenticatedSession extends Session {
+
+    public constructor(url: string) {
+        super(url);
+    }
+
+    protected onOpen(): void {
+        this.requestItem("handshake(type:authenticated)")
+            .catch(e => this.close())
+    }
+
+    public type(): SessionType {
+        return SessionType.Authenticated
     }
 }
 

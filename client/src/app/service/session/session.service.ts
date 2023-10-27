@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
-import {AnonymousSession, Session} from "./session";
-import { Observable } from "rxjs";
+import {Injectable} from '@angular/core';
+import {AnonymousSession, AuthenticatedSession, Session, SessionType} from "./session";
+import {Observable} from "rxjs";
 
 @Injectable()
 export class SessionService {
@@ -8,14 +8,38 @@ export class SessionService {
 
   public anonymous(url: string): void {
     if (this.isOpen()) {
-      this.close()
+      if (this.session!.type() !== SessionType.Anonymous) {
+        this.close()
+        this.openAnonymous(url)
+      } else {
+        // do nothing
+      }
+    } else {
+      this.openAnonymous(url)
     }
-    this.openAnonymous(url)
   }
 
   private openAnonymous(url: string): void {
     if (this.session !== undefined) throw new Error("x")
     this.session = new AnonymousSession(url)
+  }
+
+  public authenticated(url: string): void {
+    if (this.isOpen()) {
+      if (this.session!.type() !== SessionType.Authenticated) {
+        this.close()
+        this.openAuthenticated(url)
+      } else {
+        // do nothing
+      }
+    } else {
+      this.openAuthenticated(url)
+    }
+  }
+
+  private openAuthenticated(url: string): void {
+    if (this.session !== undefined) throw new Error("x")
+    this.session = new AuthenticatedSession(url)
   }
 
   public isOpen(): boolean {

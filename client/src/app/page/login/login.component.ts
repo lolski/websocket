@@ -20,7 +20,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (!this.sessionSvc.isOpen()) {
-      this.sessionSvc.open("ws://localhost:1024/session")
+      this.sessionSvc.open("ws://localhost:8081/session")
     }
     this.portChangeEvents = this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);

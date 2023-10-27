@@ -6,9 +6,19 @@ import { Observable } from "rxjs";
 export class SessionService {
   private session: Session | undefined
 
-  public open(url: string): void {
+  public anonymous(url: string): Promise<void> {
+    if (this.isOpen()) {
+      this.close()
+    }
+    return this.openAnonymous(url)
+  }
+
+  private openAnonymous(url: string) {
     if (this.session !== undefined) throw new Error("x")
-    this.session = new Session(url)
+    return Session.anonymous(url)
+        .then(session => {
+          this.session = session
+        });
   }
 
   public isOpen(): boolean {

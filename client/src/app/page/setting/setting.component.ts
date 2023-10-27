@@ -19,9 +19,7 @@ export class SettingComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    if (!this.sessionSvc.isOpen()) {
-      this.sessionSvc.open("ws://localhost:8081/session")
-    }
+    this.sessionSvc.anonymous(this.url(8081))
     this.portChangeEvents = this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
@@ -31,7 +29,7 @@ export class SettingComponent implements OnInit, OnDestroy {
     let port = params['port'];
     if (port !== undefined) {
       if (this.sessionSvc.url() !== this.url(port)) {
-        this.switchSession(this.url(port))
+        this.sessionSvc.anonymous(this.url(port))
       }
     }
   }
@@ -43,7 +41,7 @@ export class SettingComponent implements OnInit, OnDestroy {
   private switchSession(url: string) {
     console.log("switchSession to " + url)
     this.sessionSvc.close()
-    this.sessionSvc.open(url)
+    this.sessionSvc.anonymous(url)
   }
 
   ngOnDestroy(): void {

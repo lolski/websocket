@@ -6,7 +6,17 @@ export class Session {
     private readonly websocket: ResilientWebsocket
     private readonly responsesCollector: ResponsesCollector
 
-    constructor(url: string) {
+    public static anonymous(url: string): Promise<Session> {
+        let as = new Session(url)
+        return as.requestItem("handshake(type:anonymous)")
+            .then(_ => as)
+            .catch(e => {
+                as.close()
+                return as
+            })
+    }
+
+    private constructor(url: string) {
         this.websocket = new ResilientWebsocket(
             url,
             () => { console.log("onOpen") },

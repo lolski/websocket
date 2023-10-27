@@ -21,7 +21,7 @@ export class ChatroomComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.sessionSvc.authenticated(this.url(8081))
+    this.sessionSvc.authenticated(this.url(8081), "token")
     this.portChangeEvents = this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
@@ -31,7 +31,7 @@ export class ChatroomComponent implements OnInit, OnDestroy {
     let port = params['port'];
     if (port !== undefined) {
       if (this.sessionSvc.url() !== this.url(port)) {
-        this.sessionSvc.authenticated(this.url(port))
+        this.sessionSvc.authenticated(this.url(port), "token")
       }
     }
   }

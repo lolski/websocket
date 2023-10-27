@@ -19,7 +19,7 @@ export class SettingComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.sessionSvc.authenticated(this.url(8081))
+    this.sessionSvc.authenticated(this.url(8081), "token")
     this.portChangeEvents = this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
@@ -29,19 +29,13 @@ export class SettingComponent implements OnInit, OnDestroy {
     let port = params['port'];
     if (port !== undefined) {
       if (this.sessionSvc.url() !== this.url(port)) {
-        this.sessionSvc.authenticated(this.url(port))
+        this.sessionSvc.authenticated(this.url(port), "token")
       }
     }
   }
 
   private url(port: number) {
     return "ws://localhost:" + port + "/session";
-  }
-
-  private switchSession(url: string) {
-    console.log("switchSession to " + url)
-    this.sessionSvc.close()
-    this.sessionSvc.anonymous(url)
   }
 
   ngOnDestroy(): void {

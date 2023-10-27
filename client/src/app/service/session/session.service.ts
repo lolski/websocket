@@ -24,22 +24,22 @@ export class SessionService {
     this.session = new AnonymousSession(url)
   }
 
-  public authenticated(url: string): void {
+  public authenticated(url: string, token: string): void {
     if (this.isOpen()) {
       if (this.session!.type() !== SessionType.Authenticated) {
         this.close()
-        this.openAuthenticated(url)
+        this.openAuthenticated(url, token)
       } else {
         // do nothing
       }
     } else {
-      this.openAuthenticated(url)
+      this.openAuthenticated(url, token)
     }
   }
 
-  private openAuthenticated(url: string): void {
+  private openAuthenticated(url: string, token: string): void {
     if (this.session !== undefined) throw new Error("x")
-    this.session = new AuthenticatedSession(url)
+    this.session = new AuthenticatedSession(url, token)
   }
 
   public isOpen(): boolean {

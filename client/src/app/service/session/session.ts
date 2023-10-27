@@ -103,13 +103,15 @@ export class AnonymousSession extends Session {
 }
 
 export class AuthenticatedSession extends Session {
+    private readonly token: string
 
-    public constructor(url: string) {
+    public constructor(url: string, token: string) {
         super(url);
+        this.token = token
     }
 
     protected onOpen(): void {
-        this.requestItem("handshake(type:authenticated)")
+        this.requestItem("handshake(type:authenticated, token:" + this.token + ")")
             .catch(e => this.close())
     }
 

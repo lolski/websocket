@@ -1,6 +1,13 @@
 <h1>chatroom</h1>
 <hr />
-<button class="nav-item nav-link-edit" [routerLink]="['/login']">Logout</button>
+<ul>
+    <li>
+        <button class="nav-item nav-link-edit" [routerLink]="['/login']">logout</button>
+    </li>
+    <li>
+        <button class="nav-item nav-link-edit" [routerLink]="['/setting']">to setting</button>
+    </li>
+</ul>
 <hr />
 <app-responses [response]="response" />
 <app-request (submitted)="receiveRequest($event)" />

@@ -7,12 +7,14 @@ import { ChatroomComponent } from './page/chatroom/chatroom.component';
 import { LoginComponent } from './page/login/login.component';
 import { ServiceModule } from "./service/service.module";
 import { WidgetModule } from "./widget/widget.module";
+import { SettingComponent } from './page/setting/setting.component';
 
 @NgModule({
   declarations: [
       AppComponent,
       ChatroomComponent,
       LoginComponent,
+      SettingComponent,
   ],
   imports: [
       AppRoutingModule,

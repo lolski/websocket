@@ -6,10 +6,9 @@ import { Observable } from "rxjs";
 export class SessionService {
   private session: Session | undefined
 
-  public open(url: string): Promise<void> {
+  public open(url: string): void {
     if (this.session !== undefined) throw new Error("x")
     this.session = new Session(url)
-    return Promise.resolve()
   }
 
   public isOpen(): boolean {
@@ -33,5 +32,6 @@ export class SessionService {
   public close(): void {
     if (this.session === undefined) throw new Error("x")
     this.session.close()
+    this.session = undefined
   }
 }

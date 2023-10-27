@@ -9,33 +9,45 @@ import {Subscription} from "rxjs";
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit, OnDestroy {
-  private sessionSvc: SessionService
-  private portChangeEvents: Subscription
+  private readonly route: ActivatedRoute
+  private readonly sessionSvc: SessionService
+  private portChangeEvents: Subscription | undefined
 
-  constructor(sessionSvc: SessionService, route: ActivatedRoute) {
+  constructor(route: ActivatedRoute, sessionSvc: SessionService) {
+    this.route = route
     this.sessionSvc = sessionSvc
-    this.portChangeEvents = route.queryParams.subscribe(params => {
-      this.queryParamsUpdated(params);
-    })
-  }
-
-  private queryParamsUpdated(params: Params): void {
-    if (params['port'] !== undefined) {
-      this.switchSession("ws://localhost:" + params['port'] + "/session")
-    }
-  }
-
-  private switchSession(url: string) {
   }
 
   ngOnInit(): void {
     if (!this.sessionSvc.isOpen()) {
       this.sessionSvc.open("ws://localhost:1024/session")
     }
+    this.portChangeEvents = this.route.queryParams.subscribe(params => {
+      this.queryParamsUpdated(params);
+    })
+  }
+
+  private queryParamsUpdated(params: Params): void {
+    let port = params['port'];
+    if (port !== undefined) {
+      if (this.sessionSvc.url() !== this.url(port)) {
+        this.switchSession(this.url(port))
+      }
+    }
+  }
+
+  private url(port: number) {
+    return "ws://localhost:" + port + "/session";
+  }
+
+  private switchSession(url: string) {
+    console.log("switchSession to " + url)
+    this.sessionSvc.close()
+    this.sessionSvc.open(url)
   }
 
   ngOnDestroy(): void {
-    console.debug("ngOnDestroy")
-    this.portChangeEvents.unsubscribe()
+    if (this.portChangeEvents === undefined) throw new Error("x")
+    this.portChangeEvents!.unsubscribe()
   }
 }

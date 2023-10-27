@@ -1,24 +1,21 @@
 import { Injectable } from '@angular/core';
-import { Session } from "./session";
+import {AnonymousSession, Session} from "./session";
 import { Observable } from "rxjs";
 
 @Injectable()
 export class SessionService {
   private session: Session | undefined
 
-  public anonymous(url: string): Promise<void> {
+  public anonymous(url: string): void {
     if (this.isOpen()) {
       this.close()
     }
-    return this.openAnonymous(url)
+    this.openAnonymous(url)
   }
 
-  private openAnonymous(url: string) {
+  private openAnonymous(url: string): void {
     if (this.session !== undefined) throw new Error("x")
-    return Session.anonymous(url)
-        .then(session => {
-          this.session = session
-        });
+    this.session = new AnonymousSession(url)
   }
 
   public isOpen(): boolean {

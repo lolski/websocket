@@ -40,14 +40,9 @@ export class ChatroomComponent implements OnInit, OnDestroy {
     return "ws://localhost:" + port + "/session";
   }
 
-  private switchSession(url: string) {
-    this.sessionSvc.close()
-    this.sessionSvc.anonymous(url)
-  }
-
   receiveRequest(value: string): void {
-    this.sessionSvc.requestCollection(value).subscribe((res) => this.receiveResponse(res))
-    // this.sessionSvc.requestItem(value).then((res) => this.receiveResponse(res))
+    // this.sessionSvc.requestCollection(value).subscribe((res) => this.receiveResponse(res))
+    this.sessionSvc.requestItem(value).then((res) => this.receiveResponse(res))
   }
 
   receiveResponse(res: string): void {

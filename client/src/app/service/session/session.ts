@@ -2,24 +2,14 @@ import {ResilientWebsocket} from "./websocket/resilient-websocket";
 import { v4 as uuid } from "uuid";
 import {Observable, Subject} from "rxjs";
 
-export class Session {
+export abstract class Session {
     private readonly websocket: ResilientWebsocket
     private readonly responsesCollector: ResponsesCollector
 
-    public static anonymous(url: string): Promise<Session> {
-        let as = new Session(url)
-        return as.requestItem("handshake(type:anonymous)")
-            .then(_ => as)
-            .catch(e => {
-                as.close()
-                return as
-            })
-    }
-
-    private constructor(url: string) {
+    protected constructor(url: string) {
         this.websocket = new ResilientWebsocket(
             url,
-            () => { console.log("onOpen") },
+            this.onOpen.bind(this),
             () => { console.log("onOpenFailure") },
             this.onMessageReceived.bind(this),
             () => { console.debug("onClose") },
@@ -27,12 +17,14 @@ export class Session {
         this.responsesCollector = new ResponsesCollector()
     }
 
+    protected abstract onOpen(): void
+
     private onMessageReceived(res: string): void {
         let split = res.split("///")
         if (split.length !== 2) throw new Error("x")
         let reqId = split[0]
         let resValue = split[1]
-        let isItem = false
+        let isItem = true
         if (isItem) {
             this.onItemResponseReceived(reqId, resValue);
         } else {
@@ -85,6 +77,17 @@ export class Session {
 
     public close(): void {
         this.websocket.close()
+    }
+}
+
+export class AnonymousSession extends Session {
+    public constructor(url: string) {
+        super(url);
+    }
+
+    protected onOpen(): void {
+        this.requestItem("handshake(type:anonymous)")
+            .catch(e => this.close())
     }
 }
 

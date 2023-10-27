@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {SessionService} from "../../service/session/session.service";
+import {SessionManagerService} from "../../service/session/session.service";
 import {ActivatedRoute, Params} from "@angular/router";
 import {Subscription} from "rxjs";
 
@@ -10,16 +10,16 @@ import {Subscription} from "rxjs";
 })
 export class LoginComponent implements OnInit, OnDestroy {
   private readonly route: ActivatedRoute
-  private readonly sessionSvc: SessionService
+  private readonly sessionMgrSvc: SessionManagerService
   private portChangeEvents: Subscription | undefined
 
-  constructor(route: ActivatedRoute, sessionSvc: SessionService) {
+  constructor(route: ActivatedRoute, sessionMgrSvc: SessionManagerService) {
     this.route = route
-    this.sessionSvc = sessionSvc
+    this.sessionMgrSvc = sessionMgrSvc
   }
 
   ngOnInit(): void {
-    this.sessionSvc.anonymous(this.url(8081))
+    this.sessionMgrSvc.anonymous(this.url(8081))
     this.portChangeEvents = this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
@@ -28,8 +28,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   private queryParamsUpdated(params: Params): void {
     let port = params['port'];
     if (port !== undefined) {
-      if (this.sessionSvc.url() !== this.url(port)) {
-        this.sessionSvc.anonymous(this.url(port))
+      if (this.sessionMgrSvc.url() !== this.url(port)) {
+        this.sessionMgrSvc.anonymous(this.url(port))
       }
     }
   }

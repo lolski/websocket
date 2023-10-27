@@ -3,7 +3,63 @@ import {AnonymousSession, AuthenticatedSession, Session, SessionType} from "./se
 import {Observable} from "rxjs";
 
 @Injectable()
+export class SessionManagerService {
+  constructor(private sessionStateSvc: SessionStateService) {
+  }
+
+  public anonymous(url: string): void {
+    this.sessionStateSvc.anonymous(url)
+  }
+
+  public authenticated(url: string, token: string): void {
+    this.sessionStateSvc.authenticated(url, token)
+  }
+
+  public isOpen(): boolean {
+    return this.sessionStateSvc.isOpen()
+  }
+
+  public requestItem(req: string): Promise<string> {
+    return this.sessionStateSvc.requestItem(req)
+  }
+
+  public requestCollection(req: string): Observable<string> {
+    return this.sessionStateSvc.requestCollection(req)
+  }
+
+  public url(): string | undefined {
+    return this.sessionStateSvc.url()
+  }
+
+  public close(): void {
+    this.sessionStateSvc.close()
+  }
+}
+
+@Injectable()
 export class SessionService {
+  constructor(private sessionStateSvc: SessionStateService) {
+  }
+
+  public isOpen(): boolean {
+    return this.sessionStateSvc.isOpen()
+  }
+
+  public requestItem(req: string): Promise<string> {
+    return this.sessionStateSvc.requestItem(req)
+  }
+
+  public requestCollection(req: string): Observable<string> {
+    return this.sessionStateSvc.requestCollection(req)
+  }
+
+  public url(): string | undefined {
+    return this.sessionStateSvc.url()
+  }
+}
+
+@Injectable()
+export class SessionStateService {
   private session: Session | undefined
 
   public anonymous(url: string): void {

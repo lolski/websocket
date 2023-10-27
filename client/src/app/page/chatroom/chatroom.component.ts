@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {SessionService} from "../../service/session/session.service";
+import {SessionManagerService} from "../../service/session/session.service";
 import {ActivatedRoute, Params} from "@angular/router";
 import {Subscription} from "rxjs";
 
@@ -10,18 +10,18 @@ import {Subscription} from "rxjs";
 })
 export class ChatroomComponent implements OnInit, OnDestroy {
   private readonly route: ActivatedRoute
-  private readonly sessionSvc: SessionService
+  private readonly sessionMgrSvc: SessionManagerService
   private portChangeEvents: Subscription | undefined
 
   response: { request: string; response: string } | undefined
 
-  constructor(route: ActivatedRoute, sessionSvc: SessionService) {
+  constructor(route: ActivatedRoute, sessionMgrSvc: SessionManagerService) {
     this.route = route
-    this.sessionSvc = sessionSvc
+    this.sessionMgrSvc = sessionMgrSvc
   }
 
   ngOnInit(): void {
-    this.sessionSvc.authenticated(this.url(8081), "token")
+    this.sessionMgrSvc.authenticated(this.url(8081), "token")
     this.portChangeEvents = this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
@@ -30,8 +30,8 @@ export class ChatroomComponent implements OnInit, OnDestroy {
   private queryParamsUpdated(params: Params): void {
     let port = params['port'];
     if (port !== undefined) {
-      if (this.sessionSvc.url() !== this.url(port)) {
-        this.sessionSvc.authenticated(this.url(port), "token")
+      if (this.sessionMgrSvc.url() !== this.url(port)) {
+        this.sessionMgrSvc.authenticated(this.url(port), "token")
       }
     }
   }
@@ -41,8 +41,8 @@ export class ChatroomComponent implements OnInit, OnDestroy {
   }
 
   receiveRequest(value: string): void {
-    // this.sessionSvc.requestCollection(value).subscribe((res) => this.receiveResponse(res))
-    this.sessionSvc.requestItem(value).then((res) => this.receiveResponse(res))
+    // this.sessionMgrSvc.requestCollection(value).subscribe((res) => this.receiveResponse(res))
+    this.sessionMgrSvc.requestItem(value).then((res) => this.receiveResponse(res))
   }
 
   receiveResponse(res: string): void {

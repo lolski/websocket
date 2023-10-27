@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {SessionService} from "./session/session.service";
+import {SessionManagerService, SessionStateService} from "./session/session.service";
 
 @NgModule({
   declarations: [],
   imports: [
     CommonModule
   ],
-  providers: [SessionService]
+  providers: [SessionManagerService, SessionStateService]
 })
 export class ServiceModule { }

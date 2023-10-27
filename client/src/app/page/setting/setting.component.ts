@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ActivatedRoute, Params} from "@angular/router";
-import {SessionService} from "../../service/session/session.service";
+import {SessionManagerService} from "../../service/session/session.service";
 import {Subscription} from "rxjs";
 
 @Component({
@@ -10,16 +10,16 @@ import {Subscription} from "rxjs";
 })
 export class SettingComponent implements OnInit, OnDestroy {
   private readonly route: ActivatedRoute
-  private readonly sessionSvc: SessionService
+  private readonly sessionMgrSvc: SessionManagerService
   private portChangeEvents: Subscription | undefined
 
-  constructor(route: ActivatedRoute, sessionSvc: SessionService) {
+  constructor(route: ActivatedRoute, sessionSvc: SessionManagerService) {
     this.route = route
-    this.sessionSvc = sessionSvc
+    this.sessionMgrSvc = sessionSvc
   }
 
   ngOnInit(): void {
-    this.sessionSvc.authenticated(this.url(8081), "token")
+    this.sessionMgrSvc.authenticated(this.url(8081), "token")
     this.portChangeEvents = this.route.queryParams.subscribe(params => {
       this.queryParamsUpdated(params);
     })
@@ -28,8 +28,8 @@ export class SettingComponent implements OnInit, OnDestroy {
   private queryParamsUpdated(params: Params): void {
     let port = params['port'];
     if (port !== undefined) {
-      if (this.sessionSvc.url() !== this.url(port)) {
-        this.sessionSvc.authenticated(this.url(port), "token")
+      if (this.sessionMgrSvc.url() !== this.url(port)) {
+        this.sessionMgrSvc.authenticated(this.url(port), "token")
       }
     }
   }

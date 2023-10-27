@@ -121,49 +121,49 @@ export class AuthenticatedSession extends Session {
 }
 
 class ResponsesCollector {
-    private itemCollectors: Map<string, PendingItem<string>> = new Map<string, PendingItem<string>>()
-    private collectionCollectors: Map<string, Subject<string>> = new Map<string, Subject<string>>()
+    private readonly items: Map<string, PendingItem<string>> = new Map<string, PendingItem<string>>()
+    private readonly collections: Map<string, Subject<string>> = new Map<string, Subject<string>>()
 
     trackItem(reqId: string): Promise<string> {
         let pendingRes = new PendingItem<string>()
-        this.itemCollectors.set(reqId, pendingRes)
+        this.items.set(reqId, pendingRes)
         return pendingRes.promise()
     }
 
     itemSuccess(reqId: string, res: string): void {
-        let pending = this.itemCollectors.get(reqId);
+        let pending = this.items.get(reqId);
         if (pending === undefined) throw new Error("x")
         pending!.success(res)
-        this.itemCollectors.delete(reqId)
+        this.items.delete(reqId)
     }
 
     itemFailure(reqId: string, e: Error): void {
-        let pendingRequest = this.itemCollectors.get(reqId);
+        let pendingRequest = this.items.get(reqId);
         if (pendingRequest === undefined) throw new Error("x")
         pendingRequest!.failure("rejected")
-        this.itemCollectors.delete(reqId)
+        this.items.delete(reqId)
     }
 
     trackCollection(reqId: string): Observable<string> {
         let subject = new Subject<string>()
-        this.collectionCollectors.set(reqId, subject)
+        this.collections.set(reqId, subject)
         return subject
     }
 
     collectionNext(reqId: string, value: string) {
-        let pending = this.collectionCollectors.get(reqId);
+        let pending = this.collections.get(reqId);
         if (pending === undefined) throw new Error("x")
         pending!.next(value)
     }
 
     collectionSuccess(reqId: string) {
-        let pending = this.collectionCollectors.get(reqId);
+        let pending = this.collections.get(reqId);
         if (pending === undefined) throw new Error("x")
         pending!.complete()
     }
 
     collectionFailure(reqId: string, e: Error) {
-        let pending = this.collectionCollectors.get(reqId);
+        let pending = this.collections.get(reqId);
         if (pending === undefined) throw new Error("x")
         pending!.error(e)
     }

@@ -4,7 +4,10 @@ import {Observable} from "rxjs";
 
 @Injectable()
 export class SessionManagerService {
-  constructor(private sessionStateSvc: SessionStateService) {
+  private readonly sessionStateSvc: SessionStateService
+
+  constructor(sessionStateSvc: SessionStateService) {
+    this.sessionStateSvc = sessionStateSvc
   }
 
   public anonymous(url: string): void {
@@ -38,7 +41,10 @@ export class SessionManagerService {
 
 @Injectable()
 export class SessionService {
-  constructor(private sessionStateSvc: SessionStateService) {
+  private readonly sessionStateSvc: SessionStateService
+
+  constructor(sessionStateSvc: SessionStateService) {
+    this.sessionStateSvc = sessionStateSvc
   }
 
   public isOpen(): boolean {

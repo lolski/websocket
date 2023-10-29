@@ -94,13 +94,19 @@ export class AnonymousSession extends Session {
     public constructor(
         url: string,
         onOpen: () => void,
+        onReady: () => void,
+        onReadyFailure: () => void,
         onOpenFailure: (e: CloseEvent) => void,
         onClose: (e: CloseEvent) => void
     ) {
         let _onOpen = () => {
+            onOpen()
             this.requestItem("handshake(type:anonymous)")
-                .then(() => onOpen())
-                .catch(e => this.close())
+                .then(() => onReady())
+                .catch(e => {
+                    onReadyFailure()
+                    this.close()
+                })
         };
         super(url, _onOpen, onOpenFailure, onClose);
     }
@@ -123,9 +129,13 @@ export class AuthenticatedSession extends Session {
         onClose: (e: CloseEvent) => void
     ) {
         let _onOpen = () => {
+            onOpen()
             this.requestItem("handshake(type:authenticated, token:" + this.token + ")")
-                .then(() => onOpen())
-                .catch(e => this.close())
+                .then(() => onAuthenticated())
+                .catch(e => {
+                    onAuthenticationFailure()
+                    this.close()
+                })
         };
         super(url, _onOpen, onOpenFailure, onClose);
         this.token = token

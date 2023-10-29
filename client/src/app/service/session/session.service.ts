@@ -86,6 +86,8 @@ export class SessionStateService {
     this.session = new AnonymousSession(
         url,
         () => { console.debug("anonymous: onOpen") },
+        () => { console.debug("anonymous: onReady") },
+        () => { console.debug("anonymous: onReadyFailure") },
         (e) => { console.debug("anonymous: onOpenFailure") },
         (e) => { console.debug("anonymous: onClose") }
     )

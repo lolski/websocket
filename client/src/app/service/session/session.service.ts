@@ -83,7 +83,12 @@ export class SessionStateService {
 
   private openAnonymous(url: string): void {
     if (this.session !== undefined) throw new Error("x")
-    this.session = new AnonymousSession(url)
+    this.session = new AnonymousSession(
+        url,
+        () => { console.debug("anonymous: onOpen") },
+        (e) => { console.debug("anonymous: onOpenFailure") },
+        (e) => { console.debug("anonymous: onClose") }
+    )
   }
 
   public authenticated(url: string, token: string): void {
@@ -101,7 +106,15 @@ export class SessionStateService {
 
   private openAuthenticated(url: string, token: string): void {
     if (this.session !== undefined) throw new Error("x")
-    this.session = new AuthenticatedSession(url, token)
+    this.session = new AuthenticatedSession(
+        url,
+        token,
+        () => { console.debug("authenticated: onOpen") },
+        (e) => { console.debug("authenticated: onOpenFailure") },
+        () => { console.debug("authenticated: onAuthenticated") },
+        () => { console.debug("authenticated: onAuthenticationFailure") },
+        (e) => { console.debug("authenticated: onClose") }
+    )
   }
 
   public isOpen(): boolean {

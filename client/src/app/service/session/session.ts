@@ -11,18 +11,21 @@ export abstract class Session {
     private readonly websocket: ResilientWebsocket
     private readonly responsesCollector: ResponsesCollector
 
-    protected constructor(url: string) {
+    protected constructor(
+        url: string,
+        onOpen: () => void,
+        onOpenFailure: (e: CloseEvent) => void,
+        onClose: (e: CloseEvent) => void
+    ) {
         this.websocket = new ResilientWebsocket(
             url,
-            this.onOpen.bind(this),
-            () => { console.log("onOpenFailure") },
+            onOpen.bind(this),
+            onOpenFailure.bind(this),
             this.onMessageReceived.bind(this),
-            () => { console.debug("onClose") },
+            onClose.bind(this),
         )
         this.responsesCollector = new ResponsesCollector()
     }
-
-    protected abstract onOpen(): void
 
     private onMessageReceived(res: string): void {
         let split = res.split("///")
@@ -88,13 +91,18 @@ export abstract class Session {
 }
 
 export class AnonymousSession extends Session {
-    public constructor(url: string) {
-        super(url);
-    }
-
-    protected onOpen(): void {
-        this.requestItem("handshake(type:anonymous)")
-            .catch(e => this.close())
+    public constructor(
+        url: string,
+        onOpen: () => void,
+        onOpenFailure: (e: CloseEvent) => void,
+        onClose: (e: CloseEvent) => void
+    ) {
+        let _onOpen = () => {
+            this.requestItem("handshake(type:anonymous)")
+                .then(() => onOpen())
+                .catch(e => this.close())
+        };
+        super(url, _onOpen, onOpenFailure, onClose);
     }
 
     public type(): SessionType {
@@ -105,14 +113,22 @@ export class AnonymousSession extends Session {
 export class AuthenticatedSession extends Session {
     private readonly token: string
 
-    public constructor(url: string, token: string) {
-        super(url);
+    public constructor(
+        url: string,
+        token: string,
+        onOpen: () => void,
+        onOpenFailure: (e: CloseEvent) => void,
+        onAuthenticated: () => void,
+        onAuthenticationFailure: () => void,
+        onClose: (e: CloseEvent) => void
+    ) {
+        let _onOpen = () => {
+            this.requestItem("handshake(type:authenticated, token:" + this.token + ")")
+                .then(() => onOpen())
+                .catch(e => this.close())
+        };
+        super(url, _onOpen, onOpenFailure, onClose);
         this.token = token
-    }
-
-    protected onOpen(): void {
-        this.requestItem("handshake(type:authenticated, token:" + this.token + ")")
-            .catch(e => this.close())
     }
 
     public type(): SessionType {
